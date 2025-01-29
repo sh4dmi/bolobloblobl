@@ -70,6 +70,7 @@ style.textContent = `
     .dark-mode input:checked + .slider {
         background-color: #3B82F6;
     }
+
 `;
 document.head.appendChild(style);
 function toggleDarkMode() {
@@ -1022,7 +1023,28 @@ async function loadSwitchRequests(filter = 'all') {
         let query = db.collection('switches')
             .where('status', '==', 'pending');
 
-        const switchesSnapshot = await query.get();
+        const [switchesSnapshot, isOwner] = await Promise.all([
+            query.get(),
+            isDutyOwner()
+        ]);
+
+        // Check if user already has a pending switch request
+        const hasExistingRequest = switchesSnapshot.docs.some(doc =>
+            doc.data().requesterId === userData.personalNumber
+        );
+
+        // Update the add switch button state
+        const addSwitchButton = document.querySelector('[onclick="openSwitchRequestForm()"]');
+        if (addSwitchButton) {
+            if (hasExistingRequest) {
+                addSwitchButton.classList.add('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
+                addSwitchButton.disabled = true;
+            } else {
+                addSwitchButton.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
+                addSwitchButton.disabled = false;
+            }
+        }
+
         const switchElements = [];
 
         for (const doc of switchesSnapshot.docs) {
@@ -1056,29 +1078,32 @@ async function loadSwitchRequests(filter = 'all') {
                             <div class="font-medium text-lg mb-1">
                                 ${originalDuty.kind} - ${new Date(originalDuty.date.toDate()).toLocaleDateString('he-IL')}
                             </div>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">רוצה לקחת לך:</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400" style="white-space: nowrap;">רוצה לקחת לך: ${switchRequest.requestedDutyType.join(', ')}</p>
                             <div class="mt-1">
-                                <h4 class="font-medium">${switchRequest.requestedDutyType.join(', ')}</h4>
                                 <p class="text-sm text-gray-600 dark:text-gray-400">
                                     בתאריכים: ${new Date(switchRequest.startDate).toLocaleDateString('he-IL')} -
                                     ${new Date(switchRequest.endDate).toLocaleDateString('he-IL')}
                                 </p>
                                 <p class="text-sm text-gray-600 dark:text-gray-400">מבקש: ${requesterName}</p>
-
                             </div>
                             ${isCurrentUser ? '<p class="text-sm text-blue-600 dark:text-blue-300 mt-2">(בקשה שלך)</p>' : ''}
                         </div>
-                        ${!isCurrentUser ? `
-                            <button
-                                onclick="${canAccept ? `confirmSwitch('${doc.id}')` : 'void(0)'}"
-                                class="px-4 py-2 rounded ${canAccept ?
-                                    'bg-blue-600 text-white hover:bg-blue-700' :
-                                    'bg-gray-300 text-gray-500 cursor-not-allowed'}"
-                                ${!canAccept ? 'disabled' : ''}
-                            >
-                                החלף
-                            </button>
-                        ` : ''}
+                        <div class="flex flex-col gap-2">
+                            ${!isCurrentUser && canAccept ? `
+                                <button
+                                    onclick="confirmSwitch('${doc.id}')"
+                                    class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">
+                                    החלף
+                                </button>
+                            ` : ''}
+                            ${(isCurrentUser || isOwner) ? `
+                                <button
+                                    onclick="cancelSwitchRequest('${doc.id}')"
+                                    class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">
+                                    בטל
+                                </button>
+                            ` : ''}
+                        </div>
                     </div>
                 </div>
             `;
@@ -1097,7 +1122,6 @@ async function loadSwitchRequests(filter = 'all') {
         switchRequestsContainer.innerHTML = '<div class="text-red-500 text-center p-4">שגיאה בטעינת ההחלפות</div>';
     }
 }
-
 // Updated handle switch choice function with two-way switch
 async function handleSwitchChoice(switchId, assignmentId) {
     try {
@@ -1238,9 +1262,15 @@ async function confirmSwitch(switchId) {
             return;
         }
 
+        // Remove any existing modals
+        const existingModal = document.querySelector('.modal-overlay');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
         // Create and show the modal
         const modal = document.createElement('div');
-        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center';
+        modal.className = 'modal-overlay fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center';
 
         // Generate assignment buttons HTML
         const assignmentButtonsHTML = matchingAssignments.map(assignment => `
@@ -1257,7 +1287,7 @@ async function confirmSwitch(switchId) {
                 <div class="space-y-2">
                     ${assignmentButtonsHTML}
                 </div>
-                <button onclick="this.closest('.fixed').remove()"
+                <button onclick="this.closest('.modal-overlay').remove()"
                         class="w-full mt-4 px-4 py-2 border rounded">
                     ביטול
                 </button>
@@ -1269,5 +1299,17 @@ async function confirmSwitch(switchId) {
     } catch (error) {
         console.error('Error in confirmSwitch:', error);
         alert('שגיאה בטעינת אפשרויות ההחלפה');
+    }
+}async function cancelSwitchRequest(switchId) {
+    try {
+        const confirmResult = confirm('האם אתה בטוח שברצונך לבטל את בקשת ההחלפה?');
+        if (!confirmResult) return;
+
+        await db.collection('switches').doc(switchId).delete();
+        alert('בקשת ההחלפה בוטלה בהצלחה');
+        loadSwitchRequests();
+    } catch (error) {
+        console.error('Error canceling switch request:', error);
+        alert('שגיאה בביטול בקשת ההחלפה');
     }
 }
