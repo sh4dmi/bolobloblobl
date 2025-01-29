@@ -62,6 +62,14 @@ style.textContent = `
     .dark-mode .switch-container {
         background: #374151;
     }
+
+    .dark-mode .slider {
+        background-color: #4B5563;
+    }
+
+    .dark-mode input:checked + .slider {
+        background-color: #3B82F6;
+    }
 `;
 document.head.appendChild(style);
 function toggleDarkMode() {
@@ -1002,9 +1010,7 @@ async function submitSwitchRequest(event) {
         alert('שגיאה בשליחת בקשת ההחלפה');
     }
 }
-// Function to load switch requests
-// Function to load switch requests
-// Function to load switch requests with improved filtering
+// Updated loadSwitchRequests function with improved layout
 async function loadSwitchRequests(filter = 'all') {
     const userData = JSON.parse(localStorage.getItem('userData'));
     if (!userData) return;
@@ -1023,17 +1029,16 @@ async function loadSwitchRequests(filter = 'all') {
             const switchRequest = doc.data();
             const isCurrentUser = switchRequest.requesterId === userData.personalNumber;
 
-            // Skip if it's the current user's request
             if (filter === 'available' && isCurrentUser) continue;
 
-            // Check if user can accept this switch
             const canAccept = await canAcceptSwitch(switchRequest, userData);
-
-            // Skip if filtering for available and can't accept
             if (filter === 'available' && !canAccept) continue;
 
-            const switchElement = document.createElement('div');
-            switchElement.className = `duty-card ${isCurrentUser ? 'bg-blue-50 dark:bg-blue-900' : ''} mb-4`;
+            // Get the original duty details
+            const originalDutyDoc = await db.collection('duties')
+                .doc(switchRequest.dutyId)
+                .get();
+            const originalDuty = originalDutyDoc.data();
 
             // Get requester's name
             const requesterDoc = await db.collection('users')
@@ -1041,34 +1046,45 @@ async function loadSwitchRequests(filter = 'all') {
                 .get();
             const requesterName = requesterDoc.docs[0]?.data()?.fullName || switchRequest.requesterId;
 
+            const switchElement = document.createElement('div');
+            switchElement.className = `duty-card ${isCurrentUser ? 'bg-blue-50 dark:bg-blue-900' : ''} mb-4`;
+
             switchElement.innerHTML = `
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h4 class="font-medium">${switchRequest.requestedDutyType.join(', ')}</h4>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">מבקש: ${requesterName}</p>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">
-                            טווח זמן: ${new Date(switchRequest.startDate).toLocaleDateString('he-IL')} -
-                            ${new Date(switchRequest.endDate).toLocaleDateString('he-IL')}
-                        </p>
-                        ${isCurrentUser ? '<p class="text-sm text-blue-600 dark:text-blue-300">(בקשה שלך)</p>' : ''}
+                <div class="space-y-2">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="font-medium text-lg mb-1">
+                                ${originalDuty.kind} - ${new Date(originalDuty.date.toDate()).toLocaleDateString('he-IL')}
+                            </div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">רוצה לקחת לך:</p>
+                            <div class="mt-1">
+                                <h4 class="font-medium">${switchRequest.requestedDutyType.join(', ')}</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">
+                                    בתאריכים: ${new Date(switchRequest.startDate).toLocaleDateString('he-IL')} -
+                                    ${new Date(switchRequest.endDate).toLocaleDateString('he-IL')}
+                                </p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">מבקש: ${requesterName}</p>
+
+                            </div>
+                            ${isCurrentUser ? '<p class="text-sm text-blue-600 dark:text-blue-300 mt-2">(בקשה שלך)</p>' : ''}
+                        </div>
+                        ${!isCurrentUser ? `
+                            <button
+                                onclick="${canAccept ? `confirmSwitch('${doc.id}')` : 'void(0)'}"
+                                class="px-4 py-2 rounded ${canAccept ?
+                                    'bg-blue-600 text-white hover:bg-blue-700' :
+                                    'bg-gray-300 text-gray-500 cursor-not-allowed'}"
+                                ${!canAccept ? 'disabled' : ''}
+                            >
+                                החלף
+                            </button>
+                        ` : ''}
                     </div>
-                    ${!isCurrentUser ? `
-                        <button
-                            onclick="${canAccept ? `confirmSwitch('${doc.id}')` : 'void(0)'}"
-                            class="px-4 py-2 rounded ${canAccept ?
-                                'bg-blue-600 text-white hover:bg-blue-700' :
-                                'bg-gray-300 text-gray-500 cursor-not-allowed'}"
-                            ${!canAccept ? 'disabled' : ''}
-                        >
-                            החלף
-                        </button>
-                    ` : ''}
                 </div>
             `;
             switchElements.push(switchElement);
         }
 
-        // Clear loading message and append switch elements
         switchRequestsContainer.innerHTML = '';
         if (switchElements.length === 0) {
             switchRequestsContainer.innerHTML = '<div class="text-center text-gray-500 p-4">אין החלפות זמינות</div>';
@@ -1081,75 +1097,6 @@ async function loadSwitchRequests(filter = 'all') {
         switchRequestsContainer.innerHTML = '<div class="text-red-500 text-center p-4">שגיאה בטעינת ההחלפות</div>';
     }
 }
-
-async function confirmSwitch(switchId) {
-    try {
-        const userData = JSON.parse(localStorage.getItem('userData'));
-        if (!userData) {
-            throw new Error('User data not found');
-        }
-
-        const switchDoc = await db.collection('switches').doc(switchId).get();
-        if (!switchDoc.exists) {
-            throw new Error('Switch request not found');
-        }
-
-        const switchRequest = switchDoc.data();
-
-        // Get user's available assignments within the requested date range
-        const availableAssignments = await getUserAvailableAssignments(
-            userData.personalNumber,
-            switchRequest.startDate,
-            switchRequest.endDate
-        );
-
-        // Filter assignments that match requested duty types
-        const matchingAssignments = availableAssignments.filter(assignment =>
-            switchRequest.requestedDutyType.includes(assignment.kind)
-        );
-
-        if (matchingAssignments.length === 0) {
-            alert('אין לך תורנויות מתאימות להחלפה בטווח התאריכים המבוקש');
-            return;
-        }
-
-        // Create and show the modal
-        const modal = document.createElement('div');
-        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center';
-
-        // Generate assignment buttons HTML
-        const assignmentButtonsHTML = matchingAssignments.map(assignment => `
-            <button
-                onclick="handleSwitchChoice('${switchId}', '${assignment.id}')"
-                class="w-full px-4 py-2 mb-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                ${assignment.kind} - ${new Date(assignment.date.toDate()).toLocaleDateString('he-IL')}
-            </button>
-        `).join('');
-
-        modal.innerHTML = `
-            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 max-w-md">
-                <h2 class="text-xl font-bold mb-4">בחר משימה להחלפה</h2>
-                <div class="space-y-2">
-                    ${assignmentButtonsHTML}
-                </div>
-                <button onclick="this.closest('.fixed').remove()"
-                        class="w-full mt-4 px-4 py-2 border rounded">
-                    ביטול
-                </button>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-
-    } catch (error) {
-        console.error('Error in confirmSwitch:', error);
-        alert('שגיאה בטעינת אפשרויות ההחלפה');
-    }
-}// Function to filter switches
-function filterSwitches(filter) {
-    loadSwitchRequests(filter);
-}
-
 
 // Updated handle switch choice function with two-way switch
 async function handleSwitchChoice(switchId, assignmentId) {
@@ -1177,7 +1124,6 @@ async function handleSwitchChoice(switchId, assignmentId) {
 
         // Perform the two-way switch in a transaction
         await db.runTransaction(async (transaction) => {
-            // Switch the assignments between users
             transaction.update(db.collection('duties').doc(assignmentId), {
                 userNumber: switchRequest.requesterId
             });
@@ -1186,7 +1132,6 @@ async function handleSwitchChoice(switchId, assignmentId) {
                 userNumber: userData.personalNumber
             });
 
-            // Mark the switch request as completed
             transaction.update(db.collection('switches').doc(switchId), {
                 status: 'completed',
                 completedBy: userData.personalNumber,
@@ -1195,13 +1140,17 @@ async function handleSwitchChoice(switchId, assignmentId) {
             });
         });
 
-        // Remove the modal
-        document.querySelector('.fixed').remove();
+        // Close the modal if it exists
+        const modal = document.querySelector('.fixed');
+        if (modal) {
+            modal.remove();
+        }
 
         // Show success message
         alert('ההחלפה בוצעה בהצלחה');
 
-        // Navigate to main screen
+        // Navigate to main screen and ensure UI is visible
+        document.getElementById('appWrapper').style.display = 'block';
         showSection('duties');
         loadUserDuties();
 
@@ -1209,8 +1158,7 @@ async function handleSwitchChoice(switchId, assignmentId) {
         console.error('Error in handleSwitchChoice:', error);
         alert('שגיאה בביצוע ההחלפה');
     }
-}
- function toggleSwitchesFilter() {
+} function toggleSwitchesFilter() {
      const toggle = document.getElementById('toggle');
      const label = document.getElementById('toggleLabel');
 
