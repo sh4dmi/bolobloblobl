@@ -87,6 +87,13 @@
     background: #2d2d2d;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
+button.bg-blue-600 {
+    transition: background-color 0.3s ease;
+}
+
+button.bg-blue-600:hover {
+    background-color: #2563eb;
+}
     </style>
 </head>
 <body> <div id="loginWrapper" class="max-w-md mx-auto pt-16 px-4">
@@ -222,8 +229,8 @@
         <div class="mt-6">
             <h2 class="text-2xl font-bold mb-4">החלפות</h2>
             <div class="flex justify-between mb-4">
-                <button onclick="filterSwitches('all')" class="px-4 py-2 bg-blue-600 text-white rounded">כל ההחלפות</button>
-                <button onclick="filterSwitches('available')" class="px-4 py-2 bg-blue-600 text-white rounded">זמין עבורי</button>
+                <button onclick="filterSwitches('all')" class="px-4 py-2 bg-blue-600 text-white rounded-full">כל ההחלפות</button>
+                <button onclick="filterSwitches('available')" class="px-4 py-2 bg-blue-600 text-white rounded-full">זמין עבורי</button>
             </div>
             <div id="switchRequests" class="space-y-3">
                 <!-- Switch requests will be populated here -->
@@ -255,14 +262,25 @@
                         <option value="רסר">רסר</option>
                     </select>
                 </div>
+                <div>
+                    <label class="block mb-2">טווח זמן</label>
+                    <input type="time" id="startTime" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600" required>
+                    <input type="time" id="endTime" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 mt-2" required>
+                </div>
+                <div>
+                    <label class="block mb-2">בחר משימות</label>
+                    <select id="assignments" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600" multiple required>
+                        <option value="רסר">רסר</option>
+                        <option value="מטבח">מטבח</option>
+                    </select>
+                </div>
                 <div class="flex justify-end space-x-2">
                     <button type="button" onclick="closeSwitchRequestForm()" class="px-4 py-2 border rounded">ביטול</button>
                     <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">שלח</button>
                 </div>
             </form>
         </div>
-    </div>
-    <!-- Calendar Section -->
+    </div>    <!-- Calendar Section -->
     <div id="calendar" class="section hidden">
         <div class="mt-6">
             <h2 class="text-2xl font-bold mb-4">לוח חודשי</h2>
