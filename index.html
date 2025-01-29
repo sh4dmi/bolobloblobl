@@ -94,6 +94,23 @@ button.bg-blue-600 {
 button.bg-blue-600:hover {
     background-color: #2563eb;
 }
+.toggle-checkbox:checked {
+    right: 0;
+    border-color: #68D391;
+}
+
+.toggle-checkbox:checked + .toggle-label {
+    background-color: #68D391;
+}
+
+.toggle-checkbox {
+    right: 0;
+    border-color: #E2E8F0;
+}
+
+.toggle-label {
+    background-color: #E2E8F0;
+}
     </style>
 </head>
 <body> <div id="loginWrapper" class="max-w-md mx-auto pt-16 px-4">
@@ -229,8 +246,12 @@ button.bg-blue-600:hover {
         <div class="mt-6">
             <h2 class="text-2xl font-bold mb-4">החלפות</h2>
             <div class="flex justify-between mb-4">
-                <button onclick="filterSwitches('all')" class="px-4 py-2 bg-blue-600 text-white rounded-full">כל ההחלפות</button>
-                <button onclick="filterSwitches('available')" class="px-4 py-2 bg-blue-600 text-white rounded-full">זמין עבורי</button>
+                <!-- Toggle Button -->
+                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                    <input type="checkbox" name="toggle" id="toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" onclick="toggleSwitchesFilter()"/>
+                    <label for="toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                </div>
+                <span id="toggleLabel" class="text-sm text-gray-700 dark:text-gray-300">כל ההחלפות</span>
             </div>
             <div id="switchRequests" class="space-y-3">
                 <!-- Switch requests will be populated here -->
@@ -256,7 +277,7 @@ button.bg-blue-600:hover {
                 </div>
                 <div>
                     <label class="block mb-2">סוג תורנות מבוקש</label>
-                    <select id="requestedDutyType" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600" required>
+                    <select id="requestedDutyType" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600" multiple required>
                         <option value="שמירה">שמירה</option>
                         <option value="מטבח">מטבח</option>
                         <option value="רסר">רסר</option>
@@ -264,15 +285,8 @@ button.bg-blue-600:hover {
                 </div>
                 <div>
                     <label class="block mb-2">טווח זמן</label>
-                    <input type="time" id="startTime" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600" required>
-                    <input type="time" id="endTime" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 mt-2" required>
-                </div>
-                <div>
-                    <label class="block mb-2">בחר משימות</label>
-                    <select id="assignments" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600" multiple required>
-                        <option value="רסר">רסר</option>
-                        <option value="מטבח">מטבח</option>
-                    </select>
+                    <input type="date" id="startDate" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600" required>
+                    <input type="date" id="endDate" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 mt-2" required>
                 </div>
                 <div class="flex justify-end space-x-2">
                     <button type="button" onclick="closeSwitchRequestForm()" class="px-4 py-2 border rounded">ביטול</button>
@@ -280,8 +294,7 @@ button.bg-blue-600:hover {
                 </div>
             </form>
         </div>
-    </div>    <!-- Calendar Section -->
-    <div id="calendar" class="section hidden">
+    </div>    <div id="calendar" class="section hidden">
         <div class="mt-6">
             <h2 class="text-2xl font-bold mb-4">לוח חודשי</h2>
             <div class="calendar">

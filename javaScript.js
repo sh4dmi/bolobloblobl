@@ -599,6 +599,8 @@ function createDutyCard(duty) {
    document.addEventListener('DOMContentLoaded', () => {
        createDutyAssignmentModal();
        initializeSettings();
+       loadSwitchRequests();
+
        updateDutiesSection();
     if (document.getElementById('constraints')) {
         updateConstraintsSection();
@@ -907,10 +909,9 @@ async function submitSwitchRequest(event) {
     event.preventDefault();
 
     const dutyId = document.getElementById('switchDuty').value;
-    const requestedDutyType = document.getElementById('requestedDutyType').value;
-    const startTime = document.getElementById('startTime').value;
-    const endTime = document.getElementById('endTime').value;
-    const assignments = Array.from(document.getElementById('assignments').selectedOptions).map(option => option.value);
+    const requestedDutyType = Array.from(document.getElementById('requestedDutyType').selectedOptions).map(option => option.value);
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
 
     if (!dutyId) {
         alert('נא לבחור תורנות להחלפה');
@@ -924,9 +925,8 @@ async function submitSwitchRequest(event) {
         await db.collection('switches').add({
             dutyId,
             requestedDutyType,
-            startTime,
-            endTime,
-            assignments,
+            startDate,
+            endDate,
             requesterId: userData.personalNumber,
             status: 'pending',
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -940,6 +940,7 @@ async function submitSwitchRequest(event) {
         alert('שגיאה בשליחת בקשת ההחלפה');
     }
 }
+// Function to load switch requests
 // Function to load switch requests
 async function loadSwitchRequests(filter = 'all') {
     const userData = JSON.parse(localStorage.getItem('userData'));
@@ -966,10 +967,9 @@ async function loadSwitchRequests(filter = 'all') {
             switchElement.innerHTML = `
                 <div class="flex justify-between items-center">
                     <div>
-                        <h4 class="font-medium">${switchRequest.requestedDutyType}</h4>
+                        <h4 class="font-medium">${switchRequest.requestedDutyType.join(', ')}</h4>
                         <p class="text-sm text-gray-600 dark:text-gray-400">מבקש: ${switchRequest.requesterId}</p>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">טווח זמן: ${switchRequest.startTime} - ${switchRequest.endTime}</p>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">משימות: ${switchRequest.assignments.join(', ')}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">טווח זמן: ${switchRequest.startDate} - ${switchRequest.endDate}</p>
                         ${isCurrentUser ? '<p class="text-sm text-blue-600 dark:text-blue-300">(בקשה שלך)</p>' : ''}
                     </div>
                     ${!isCurrentUser ? `<button onclick="confirmSwitch('${doc.id}')" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">החלף</button>` : ''}
@@ -981,8 +981,7 @@ async function loadSwitchRequests(filter = 'all') {
         console.error('Error loading switch requests:', error);
         alert('שגיאה בטעינת בקשת ההחלפה');
     }
-}// Function to confirm a switch
-async function confirmSwitch(switchId) {
+}async function confirmSwitch(switchId) {
     const userData = JSON.parse(localStorage.getItem('userData'));
     if (!userData) return;
 
@@ -1010,10 +1009,6 @@ function filterSwitches(filter) {
     loadSwitchRequests(filter);
 }
 
-// Initialize event listeners
-document.addEventListener('DOMContentLoaded', () => {
-    loadSwitchRequests();
-});
 
 async function handleSwitchChoice(switchId, assignment) {
     const userData = JSON.parse(localStorage.getItem('userData'));
@@ -1039,5 +1034,16 @@ async function handleSwitchChoice(switchId, assignment) {
     } catch (error) {
         console.error('Error confirming switch:', error);
         alert('שגיאה באישור ההחלפה');
+    }
+}
+function toggleSwitchesFilter() {
+    const toggle = document.getElementById('toggle');
+    const label = document.getElementById('toggleLabel');
+    if (toggle.checked) {
+        label.textContent = 'זמין עבורי';
+        loadSwitchRequests('available');
+    } else {
+        label.textContent = 'כל ההחלפות';
+        loadSwitchRequests('all');
     }
 }
