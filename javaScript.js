@@ -863,3 +863,151 @@ function initializeConstraintsHandlers() {
         }
     });
 }
+// Function to open the switch request form
+function openSwitchRequestForm() {
+    loadFutureAssignments();
+    document.getElementById('switchRequestForm').classList.remove('hidden');
+}
+
+// Function to close the switch request form
+function closeSwitchRequestForm() {
+    document.getElementById('switchRequestForm').classList.add('hidden');
+}
+
+// Function to load future assignments into the dropdown
+async function loadFutureAssignments() {
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    if (!userData) return;
+
+    const now = new Date();
+    const switchDutySelect = document.getElementById('switchDuty');
+    switchDutySelect.innerHTML = '<option value="">בחר תורנות להחלפה</option>';
+
+    try {
+        const dutiesSnapshot = await db.collection('duties')
+            .where('userNumber', '==', userData.personalNumber)
+            .where('date', '>=', now)
+            .get();
+
+        dutiesSnapshot.forEach(doc => {
+            const duty = doc.data();
+            const option = document.createElement('option');
+            option.value = doc.id;
+            option.textContent = `${duty.kind} - ${duty.date.toDate().toLocaleDateString('he-IL')}`;
+            switchDutySelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading future assignments:', error);
+        alert('שגיאה בטעינת התורנויות');
+    }
+}
+
+// Function to submit a switch request
+async function submitSwitchRequest(event) {
+    event.preventDefault();
+
+    const dutyId = document.getElementById('switchDuty').value;
+    const requestedDutyType = document.getElementById('requestedDutyType').value;
+
+    if (!dutyId) {
+        alert('נא לבחור תורנות להחלפה');
+        return;
+    }
+
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    if (!userData) return;
+
+    try {
+        await db.collection('switches').add({
+            dutyId,
+            requestedDutyType,
+            requesterId: userData.personalNumber,
+            status: 'pending',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        alert('בקשת ההחלפה נשלחה בהצלחה');
+        closeSwitchRequestForm();
+        loadSwitchRequests();
+    } catch (error) {
+        console.error('Error submitting switch request:', error);
+        alert('שגיאה בשליחת בקשת ההחלפה');
+    }
+}
+
+// Function to load switch requests
+async function loadSwitchRequests(filter = 'all') {
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    if (!userData) return;
+
+    const switchRequestsContainer = document.getElementById('switchRequests');
+    switchRequestsContainer.innerHTML = '';
+
+    try {
+        let query = db.collection('switches');
+
+        if (filter === 'available') {
+            // Filter for switches that are available for the current user
+            query = query.where('status', '==', 'pending');
+        }
+
+        const switchesSnapshot = await query.get();
+
+        switchesSnapshot.forEach(doc => {
+            const switchRequest = doc.data();
+            const switchElement = document.createElement('div');
+            switchElement.className = 'duty-card';
+            switchElement.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h4 class="font-medium">${switchRequest.requestedDutyType}</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">מבקש: ${switchRequest.requesterId}</p>
+                    </div>
+                    <button onclick="confirmSwitch('${doc.id}')" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">החלף</button>
+                </div>
+            `;
+            switchRequestsContainer.appendChild(switchElement);
+        });
+    } catch (error) {
+        console.error('Error loading switch requests:', error);
+        alert('שגיאה בטעינת בקשת ההחלפה');
+    }
+}
+
+// Function to confirm a switch
+async function confirmSwitch(switchId) {
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    if (!userData) return;
+
+    const confirmSwitch = confirm('האם אתה בטוח שברצונך להחליף תורנות זו?');
+    if (!confirmSwitch) return;
+
+    try {
+        const switchDoc = await db.collection('switches').doc(switchId).get();
+        const switchRequest = switchDoc.data();
+
+        // Update the duties in Firestore
+        await db.collection('duties').doc(switchRequest.dutyId).update({
+            userNumber: switchRequest.requesterId
+        });
+
+        // Delete the switch request
+        await db.collection('switches').doc(switchId).delete();
+
+        alert('ההחלפה בוצעה בהצלחה');
+        loadSwitchRequests();
+    } catch (error) {
+        console.error('Error confirming switch:', error);
+        alert('שגיאה באישור ההחלפה');
+    }
+}
+
+// Function to filter switches
+function filterSwitches(filter) {
+    loadSwitchRequests(filter);
+}
+
+// Initialize event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    loadSwitchRequests();
+});
