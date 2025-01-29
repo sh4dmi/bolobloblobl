@@ -76,24 +76,90 @@
         }
     </style>
 </head>
-<body>
-<!-- App Bar -->
-<div class="bg-blue-600 text-white px-4 py-3 flex justify-between items-center fixed w-full max-w-[480px] top-0 z-10">
-    <button onclick="openSettings()" class="p-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-    </button>
-    <h1 class="text-xl font-bold">מערכת שיבוצים</h1>
-    <button onclick="toggleMenu()" class="p-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-    </button>
+<body> <div id="loginWrapper" class="max-w-md mx-auto pt-16 px-4">
+    <!-- Login Form -->
+    <div id="loginForm" class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold mb-6 text-center">התחברות</h2>
+        <form onsubmit="handleLogin(event)" class="space-y-4">
+            <div>
+                <label class="block mb-1">מספר טלפון</label>
+                <input type="tel" id="loginPhone" required
+                       class="w-full p-2 border rounded" dir="ltr">
+            </div>
+            <div>
+                <label class="block mb-1">סיסמה</label>
+                <input type="password" id="loginPassword" required
+                       class="w-full p-2 border rounded">
+            </div>
+            <button type="submit"
+                    class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+                התחבר
+            </button>
+        </form>
+        <button onclick="showRegisterForm()"
+                class="w-full mt-4 text-blue-600 hover:underline">
+            משתמש חדש? הירשם כאן
+        </button>
+    </div>
 </div>
 
-<!-- Navigation Menu -->
+    <!-- Register Form -->
+    <div id="registerForm" class="hidden bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold mb-6 text-center">הרשמה</h2>
+        <form onsubmit="handleRegister(event)" class="space-y-4">
+            <div>
+                <label class="block mb-1">שם מלא</label>
+                <input type="text" id="fullName" required
+                       class="w-full p-2 border rounded">
+            </div>
+            <div>
+                <label class="block mb-1">מספר טלפון</label>
+                <input type="tel" id="phoneNumber" required
+                       class="w-full p-2 border rounded" dir="ltr">
+            </div>
+            <div>
+                <label class="block mb-1">מספר אישי</label>
+                <input type="text" id="personalNumber" required
+                       class="w-full p-2 border rounded">
+            </div>
+            <div>
+                <label class="block mb-1">תאריך שחרור</label>
+                <input type="date" id="releaseDate" required
+                       class="w-full p-2 border rounded">
+            </div>
+            <div>
+                <label class="block mb-1">סיסמה</label>
+                <input type="password" id="password" required
+                       class="w-full p-2 border rounded">
+            </div>
+            <button type="submit"
+                    class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+                הירשם
+            </button>
+        </form>
+        <button onclick="showLoginForm()"
+                class="w-full mt-4 text-blue-600 hover:underline">
+            כבר יש לך חשבון? התחבר כאן
+        </button>
+    </div> <div id="appWrapper" class="hidden">
+    <!-- App Bar -->
+    <div class="bg-blue-600 text-white px-4 py-3 flex justify-between items-center fixed w-full max-w-[480px] top-0 z-10">
+        <button onclick="openSettings()" class="p-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        </button>
+        <h1 class="text-xl font-bold">מערכת שיבוצים</h1>
+        <button onclick="toggleMenu()" class="p-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+    </div>
+
+
+    <!-- Navigation Menu -->
 <div id="navMenu" class="nav-menu">
     <div class="p-4 space-y-4">
         <button onclick="showSection('duties')" class="w-full text-right py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">השיבוצים שלי</button>
@@ -245,6 +311,12 @@
         </div>
     </div>
 </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
 <script src="javaScript.js"></script>
 
 </body>
