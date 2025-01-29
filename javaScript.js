@@ -650,6 +650,8 @@ function updateDutiesSection() {
         </div>
     `;
 }
+
+
 function updateConstraintsSection() {
     const constraintsSection = document.getElementById('constraints');
     const nextMonth = new Date();
@@ -664,6 +666,60 @@ function updateConstraintsSection() {
         <div class="mt-6">
             <h2 class="text-2xl font-bold mb-4">האילוצים שלי</h2>
             <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
+                <!-- Duty Preferences Section -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg font-semibold">מה אני מעדיף</h3>
+                        <span class="text-sm text-gray-500">(עד 2 אפשרויות)</span>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="dutyPreference" value="שמירה" class="ml-2">
+                            שמירה
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="dutyPreference" value="מטבח" class="ml-2">
+                            מטבח
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="dutyPreference" value="רסר" class="ml-2">
+                            רסר
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Shooting Range Section -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-3">מטווחים בתוקף?</h3>
+                    <div class="space-x-4 flex">
+                        <label class="flex items-center">
+                            <input type="radio" name="shootingRange" value="yes" class="ml-2">
+                            כן
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="shootingRange" value="no" class="ml-2">
+                            לא
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Distance Section -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-3">מרוחק?</h3>
+                    <div class="space-x-4 flex">
+                        <label class="flex items-center">
+                            <input type="radio" name="isDistant" value="yes" class="ml-2">
+                            כן
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="isDistant" value="no" class="ml-2">
+                            לא
+                        </label>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-200 dark:border-gray-700 my-6"></div>
+
                 <h3 class="text-xl font-bold mb-6 text-center">
                     אילוצים לחודש ${monthNames[nextMonth.getMonth()]}
                 </h3>
@@ -683,76 +739,8 @@ function updateConstraintsSection() {
 
     populateCalendar(nextMonth);
     initializeConstraintsHandlers();
+    initializePreferencesHandlers();
 }
-
-function populateCalendar(date) {
-    const calendar = document.getElementById('constraintsCalendar');
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const firstDayOfMonth = new Date(year, month, 1).getDay();
-
-    // Add day headers
-    const daysOfWeek = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
-    daysOfWeek.forEach(day => {
-        const dayHeader = document.createElement('div');
-        dayHeader.className = 'text-center font-bold p-2';
-        dayHeader.textContent = day;
-        calendar.appendChild(dayHeader);
-    });
-
-    // Add empty cells for alignment
-    for (let i = 0; i < firstDayOfMonth; i++) {
-        const emptyCell = document.createElement('div');
-        emptyCell.className = 'p-2';
-        calendar.appendChild(emptyCell);
-    }
-
-    // Add calendar days
-    for (let day = 1; day <= daysInMonth; day++) {
-        const dayElement = document.createElement('div');
-        dayElement.className = 'p-2 text-center rounded-lg cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-700';
-        dayElement.textContent = day;
-        dayElement.dataset.day = day;
-        calendar.appendChild(dayElement);
-    }
-}
-
-function updateConstraintsSection() {
-    const constraintsSection = document.getElementById('constraints');
-    const nextMonth = new Date();
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-
-    const monthNames = [
-        'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
-        'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
-    ];
-
-    constraintsSection.innerHTML = `
-        <div class="mt-6">
-            <h2 class="text-2xl font-bold mb-4">האילוצים שלי</h2>
-            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
-                <h3 class="text-xl font-bold mb-6 text-center">
-                    אילוצים לחודש ${monthNames[nextMonth.getMonth()]}
-                </h3>
-                <div id="constraintsCalendar" class="grid grid-cols-7 gap-1 mb-6">
-                    <!-- Calendar will be populated by JavaScript -->
-                </div>
-                <div id="remainingConstraints" class="text-center mb-4">
-                    נשארו עוד 5 אילוצים לבחור
-                </div>
-                <button id="submitConstraints"
-                        class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors">
-                    שלח אילוצים
-                </button>
-            </div>
-        </div>
-    `;
-
-    populateCalendar(nextMonth);
-    initializeConstraintsHandlers();
-}
-
 function populateCalendar(date) {
     const calendar = document.getElementById('constraintsCalendar');
     calendar.innerHTML = ''; // Clear existing content
@@ -788,6 +776,20 @@ function populateCalendar(date) {
     }
 }
 
+
+function initializePreferencesHandlers() {
+    // Handle duty preference checkboxes (max 2)
+    const dutyPreferences = document.querySelectorAll('input[name="dutyPreference"]');
+    dutyPreferences.forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+            const checked = document.querySelectorAll('input[name="dutyPreference"]:checked');
+            if (checked.length > 2) {
+                e.target.checked = false;
+            }
+        });
+    });
+}
+
 function initializeConstraintsHandlers() {
     const calendar = document.getElementById('constraintsCalendar');
     const remainingText = document.getElementById('remainingConstraints');
@@ -802,11 +804,9 @@ function initializeConstraintsHandlers() {
         const day = parseInt(dayElement.dataset.day);
 
         if (dayElement.classList.contains('bg-red-500')) {
-            // Deselect day
             dayElement.classList.remove('bg-red-500', 'text-white');
             selectedDays.delete(day);
         } else if (selectedDays.size < MAX_CONSTRAINTS) {
-            // Select day - directly to red
             dayElement.classList.add('bg-red-500', 'text-white');
             selectedDays.add(day);
         }
@@ -822,6 +822,12 @@ function initializeConstraintsHandlers() {
                 return;
             }
 
+            // Get selected preferences
+            const dutyPreferences = Array.from(document.querySelectorAll('input[name="dutyPreference"]:checked'))
+                .map(input => input.value);
+            const shootingRange = document.querySelector('input[name="shootingRange"]:checked')?.value || null;
+            const isDistant = document.querySelector('input[name="isDistant"]:checked')?.value || null;
+
             // Get user document reference by phone number
             const userSnapshot = await db.collection('users')
                 .where('phoneNumber', '==', userData.phoneNumber)
@@ -836,19 +842,24 @@ function initializeConstraintsHandlers() {
             const nextMonth = new Date();
             nextMonth.setMonth(nextMonth.getMonth() + 1);
 
-            // Update the user's constraints
+            // Update the user's constraints and preferences
             await db.collection('users').doc(userDoc.id).update({
                 constraints: {
                     month: nextMonth.getMonth() + 1,
                     year: nextMonth.getFullYear(),
-                    days: Array.from(selectedDays)
+                    days: Array.from(selectedDays),
+                    preferences: {
+                        dutyPreferences,
+                        shootingRange,
+                        isDistant
+                    }
                 }
             });
 
-            alert('האילוצים נשמרו בהצלחה');
+            alert('האילוצים והעדפות נשמרו בהצלחה');
         } catch (error) {
-            console.error('Error saving constraints:', error);
-            alert('שגיאה בשמירת האילוצים');
+            console.error('Error saving constraints and preferences:', error);
+            alert('שגיאה בשמירת האילוצים והעדפות');
         }
     });
 }
