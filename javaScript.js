@@ -1206,3 +1206,68 @@ async function canAcceptSwitch(switchRequest, userData) {
         return false;
     }
 }
+// Updated confirm switch function
+async function confirmSwitch(switchId) {
+    try {
+        const userData = JSON.parse(localStorage.getItem('userData'));
+        if (!userData) {
+            throw new Error('User data not found');
+        }
+
+        const switchDoc = await db.collection('switches').doc(switchId).get();
+        if (!switchDoc.exists) {
+            throw new Error('Switch request not found');
+        }
+
+        const switchRequest = switchDoc.data();
+
+        // Get user's available assignments within the requested date range
+        const availableAssignments = await getUserAvailableAssignments(
+            userData.personalNumber,
+            switchRequest.startDate,
+            switchRequest.endDate
+        );
+
+        // Filter assignments that match requested duty types
+        const matchingAssignments = availableAssignments.filter(assignment =>
+            switchRequest.requestedDutyType.includes(assignment.kind)
+        );
+
+        if (matchingAssignments.length === 0) {
+            alert('אין לך תורנויות מתאימות להחלפה בטווח התאריכים המבוקש');
+            return;
+        }
+
+        // Create and show the modal
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center';
+
+        // Generate assignment buttons HTML
+        const assignmentButtonsHTML = matchingAssignments.map(assignment => `
+            <button
+                onclick="handleSwitchChoice('${switchId}', '${assignment.id}')"
+                class="w-full px-4 py-2 mb-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                ${assignment.kind} - ${new Date(assignment.date.toDate()).toLocaleDateString('he-IL')}
+            </button>
+        `).join('');
+
+        modal.innerHTML = `
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 max-w-md">
+                <h2 class="text-xl font-bold mb-4">בחר משימה להחלפה</h2>
+                <div class="space-y-2">
+                    ${assignmentButtonsHTML}
+                </div>
+                <button onclick="this.closest('.fixed').remove()"
+                        class="w-full mt-4 px-4 py-2 border rounded">
+                    ביטול
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+    } catch (error) {
+        console.error('Error in confirmSwitch:', error);
+        alert('שגיאה בטעינת אפשרויות ההחלפה');
+    }
+}
