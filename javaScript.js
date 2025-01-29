@@ -127,149 +127,157 @@ document.addEventListener('click', (event) => {
     if (settingsModal && !event.target.closest('.bg-white') && !event.target.closest('button')) {
         settingsModal.classList.add('hidden');
     }
-});
-const firebaseConfig = {
-    apiKey: "AIzaSyAE2oXv6WG8t0sKefhbqkNdti7T6Z2OZi0",
-    authDomain: "bolbol-815bc.firebaseapp.com",
-    projectId: "bolbol-815bc",
-    storageBucket: "bolbol-815bc.firebasestorage.app",
-    messagingSenderId: "925006008330",
-    appId: "1:925006008330:web:e1a5924c945201045e0ff3",
-    measurementId: "G-JYGPN1BWKV"
-};
+});const firebaseConfig = {
+       apiKey: "AIzaSyAE2oXv6WG8t0sKefhbqkNdti7T6Z2OZi0",
+       authDomain: "bolbol-815bc.firebaseapp.com",
+       projectId: "bolbol-815bc",
+       storageBucket: "bolbol-815bc.firebasestorage.app",
+       messagingSenderId: "925006008330",
+       appId: "1:925006008330:web:e1a5924c945201045e0ff3",
+       measurementId: "G-JYGPN1BWKV"
+   };
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+   firebase.initializeApp(firebaseConfig);
+   const auth = firebase.auth();
+   const db = firebase.firestore();
 
-// Form visibility functions
-function showRegisterForm() {
-    document.getElementById('loginForm').classList.add('hidden');
-    document.getElementById('registerForm').classList.remove('hidden');
-}
+   // Form visibility functions
+   function showRegisterForm() {
+       document.getElementById('loginForm').classList.add('hidden');
+       document.getElementById('registerForm').classList.remove('hidden');
+   }
 
-function showLoginForm() {
-    document.getElementById('registerForm').classList.add('hidden');
-    document.getElementById('loginForm').classList.remove('hidden');
-}
+   function showLoginForm() {
+       document.getElementById('registerForm').classList.add('hidden');
+       document.getElementById('loginForm').classList.remove('hidden');
+   }
 
-// Login handler
-async function handleLogin(event) {
-    event.preventDefault();
+   // Login handler
+   async function handleLogin(event) {
+       event.preventDefault();
 
-    const phoneNumber = document.getElementById('loginPhone').value;
-    const password = document.getElementById('loginPassword').value;
+       const phoneNumber = document.getElementById('loginPhone').value;
+       const password = document.getElementById('loginPassword').value;
 
-    try {
-        // Check if user exists in Firestore
-        const userSnapshot = await db.collection('users')
-            .where('phoneNumber', '==', phoneNumber)
-            .get();
+       try {
+           // Check if user exists in Firestore
+           const userSnapshot = await db.collection('users')
+               .where('phoneNumber', '==', phoneNumber)
+               .get();
 
-        if (userSnapshot.empty) {
-            alert('משתמש לא קיים');
-            return;
-        }
+           if (userSnapshot.empty) {
+               alert('מספר טלפון או סיסמה שגויים');
+               return;
+           }
 
-        // Sign in with Firebase Auth
-        const userCredential = await auth.signInWithEmailAndPassword(
-            `${phoneNumber}@dutyassign.com`,
-            password
-        );
+           // Sign in with Firebase Auth
+           const userCredential = await auth.signInWithEmailAndPassword(
+               `${phoneNumber}@dutyassign.com`,
+               password
+           );
 
-        // Store user data
-        const userData = userSnapshot.docs[0].data();
-        localStorage.setItem('user', JSON.stringify({
-            fullName: userData.fullName,
-            phoneNumber: userData.phoneNumber,
-            personalNumber: userData.personalNumber,
-            releaseDate: userData.releaseDate
-        }));
+           // Store user data
+           const userData = userSnapshot.docs[0].data();
+           localStorage.setItem('userData', JSON.stringify({
+               fullName: userData.fullName,
+               phoneNumber: userData.phoneNumber,
+               personalNumber: userData.personalNumber,
+               releaseDate: userData.releaseDate
+           }));
 
-        // Redirect to main app
-        window.location.href = 'app.html';
-    } catch (error) {
-        console.error(error);
-        alert('שגיאה בהתחברות: ' + error.message);
-    }
-}
+           // Hide login wrapper and show app wrapper
+           document.getElementById('loginWrapper').style.display = 'none';
+           document.getElementById('appWrapper').style.display = 'block';
 
-// Registration handler
-async function handleRegister(event) {
-    event.preventDefault();
+           // Update displayed name
+           const userGreeting = document.querySelector('#duties h2');
+           if (userGreeting) {
+               userGreeting.textContent = `שלום, ${userData.fullName}`;
+           }
 
-    const fullName = document.getElementById('fullName').value;
-    const phoneNumber = document.getElementById('phoneNumber').value;
-    const personalNumber = document.getElementById('personalNumber').value;
-    const releaseDate = document.getElementById('releaseDate').value;
-    const password = document.getElementById('password').value;
+       } catch (error) {
+           console.error(error);
+           alert('מספר טלפון או סיסמה שגויים');
+       }
+   }
 
-    try {
-        // Check if user exists
-        const existingUser = await db.collection('users')
-            .where('phoneNumber', '==', phoneNumber)
-            .get();
+   // Registration handler
+   async function handleRegister(event) {
+       event.preventDefault();
 
-        if (!existingUser.empty) {
-            alert('מספר טלפון כבר קיים במערכת');
-            return;
-        }
+       const fullName = document.getElementById('fullName').value;
+       const phoneNumber = document.getElementById('phoneNumber').value;
+       const personalNumber = document.getElementById('personalNumber').value;
+       const releaseDate = document.getElementById('releaseDate').value;
+       const password = document.getElementById('password').value;
 
-        // Create auth user
-        const userCredential = await auth.createUserWithEmailAndPassword(
-            `${phoneNumber}@dutyassign.com`,
-            password
-        );
+       try {
+           // Check if user exists
+           const existingUser = await db.collection('users')
+               .where('phoneNumber', '==', phoneNumber)
+               .get();
 
-        // Store additional user data in Firestore
-        await db.collection('users').doc(userCredential.user.uid).set({
-            fullName,
-            phoneNumber,
-            personalNumber,
-            releaseDate,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+           if (!existingUser.empty) {
+               alert('מספר טלפון כבר קיים במערכת');
+               return;
+           }
 
-        alert('ההרשמה הושלמה בהצלחה!');
-        showLoginForm();
-    } catch (error) {
-        console.error(error);
-        alert('שגיאה בהרשמה: ' + error.message);
-    }
-}
+           // Create auth user
+           const userCredential = await auth.createUserWithEmailAndPassword(
+               `${phoneNumber}@dutyassign.com`,
+               password
+           );
 
-// Check authentication state on page load
-auth.onAuthStateChanged((user) => {
-    if (user) {
-        // If user is already logged in, redirect to app
-        window.location.href = 'app.html';
-    }
-});
-  function handleLogin(event) {
-            event.preventDefault();
+           // Store additional user data in Firestore
+           await db.collection('users').doc(userCredential.user.uid).set({
+               fullName,
+               phoneNumber,
+               personalNumber,
+               releaseDate,
+               createdAt: firebase.firestore.FieldValue.serverTimestamp()
+           });
 
-            // Mock login validation (you should replace this with real logic)
-            const phone = document.getElementById('loginPhone').value;
-            const password = document.getElementById('loginPassword').value;
+           alert('ההרשמה הושלמה בהצלחה!');
 
-            if (phone === "12345" && password === "password") {
-                // Hide login form
-                document.getElementById('loginWrapper').style.display = 'none';
-                // Show the app content
-                document.getElementById('appWrapper').style.display = 'block';
-            } else {
-                alert("Invalid credentials");
-            }
-        }
+           // Store user data in localStorage
+           localStorage.setItem('userData', JSON.stringify({
+               fullName,
+               phoneNumber,
+               personalNumber,
+               releaseDate
+           }));
 
-        // Function to toggle between login and register forms
-        function showRegisterForm() {
-            document.getElementById('loginForm').classList.add('hidden');
-            document.getElementById('registerForm').classList.remove('hidden');
-        }
+           // Hide login wrapper and show app wrapper
+           document.getElementById('loginWrapper').style.display = 'none';
+           document.getElementById('appWrapper').style.display = 'block';
 
-        function showLoginForm() {
-            document.getElementById('registerForm').classList.add('hidden');
-            document.getElementById('loginForm').classList.remove('hidden');
-        }
+           // Update displayed name
+           const userGreeting = document.querySelector('#duties h2');
+           if (userGreeting) {
+               userGreeting.textContent = `שלום, ${fullName}`;
+           }
+
+       } catch (error) {
+           console.error(error);
+           alert('שגיאה בהרשמה: ' + error.message);
+       }
+   }
+
+   // Check authentication state on page load
+   auth.onAuthStateChanged((user) => {
+       if (user) {
+           // Get user data from localStorage
+           const userData = JSON.parse(localStorage.getItem('userData'));
+           if (userData) {
+               // Hide login wrapper and show app wrapper
+               document.getElementById('loginWrapper').style.display = 'none';
+               document.getElementById('appWrapper').style.display = 'block';
+
+               // Update displayed name
+               const userGreeting = document.querySelector('#duties h2');
+               if (userGreeting) {
+                   userGreeting.textContent = `שלום, ${userData.fullName}`;
+               }
+           }
+       }
+   });
