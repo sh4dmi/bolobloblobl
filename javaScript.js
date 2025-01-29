@@ -532,9 +532,10 @@ function createDutyCard(duty) {
                 <h4 class="font-medium">${duty.kind}</h4>
                 <p class="text-sm text-gray-600 dark:text-gray-400">${formattedDate}</p>
             </div>
-            <span class="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs px-2 py-1 rounded">
-                ${isUpcoming(date) ? 'קרוב' : 'מאושר'}
-            </span>
+                <span class="text-xs px-2 py-1 rounded
+                    ${isUpcoming(date) ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'}">
+                    ${isUpcoming(date) ? 'בקרוב' : 'סיימת'}
+                </span>
         </div>
     `;
 
