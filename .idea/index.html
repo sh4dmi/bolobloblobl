@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת שיבוצים</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            max-width: 480px;
+            margin: 0 auto;
+            background-color: #f5f5f5;
+        }
+        body.dark-mode {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .duty-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .dark-mode .duty-card {
+            background: #2d2d2d;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .nav-menu {
+            display: none;
+            position: fixed;
+            top: 60px;
+            right: 0;
+            background: white;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 15;
+        }
+        .dark-mode .nav-menu {
+            background: #2d2d2d;
+        }
+        .nav-menu.active {
+            display: block;
+        }
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            font-size: 0.875rem;
+        }
+        .dark-mode .calendar-day {
+            border-color: #404040;
+        }
+        .exchange-form {
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+        }
+        .dark-mode .exchange-form {
+            background: #2d2d2d;
+        }
+    </style>
+</head>
+<body>
+<!-- App Bar -->
+<div class="bg-blue-600 text-white px-4 py-3 flex justify-between items-center fixed w-full max-w-[480px] top-0 z-10">
+    <button onclick="openSettings()" class="p-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+    </button>
+    <h1 class="text-xl font-bold">מערכת שיבוצים</h1>
+    <button onclick="toggleMenu()" class="p-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+    </button>
+</div>
+
+<!-- Navigation Menu -->
+<div id="navMenu" class="nav-menu">
+    <div class="p-4 space-y-4">
+        <button onclick="showSection('duties')" class="w-full text-right py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">השיבוצים שלי</button>
+        <button onclick="showSection('exchanges')" class="w-full text-right py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">החלפות</button>
+        <button onclick="showSection('calendar')" class="w-full text-right py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">לוח חודשי</button>
+        <button onclick="showSection('constraints')" class="w-full text-right py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">האילוצים שלי</button>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="pt-16 px-4">
+    <!-- My Duties Section -->
+    <div id="duties" class="section">
+        <div class="mt-6">
+            <h2 class="text-2xl font-bold">שלום, יוסי</h2>
+            <p class="text-gray-600 dark:text-gray-400">ברוך הבא!</p>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-lg font-semibold mb-3">שמירות</h3>
+            <div class="duty-card">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h4 class="font-medium">שמירה</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">יום שני, 08:00 - 16:00</p>
+                    </div>
+                    <span class="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs px-2 py-1 rounded">קרוב</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-lg font-semibold mb-3">מטבחים</h3>
+            <div class="duty-card">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h4 class="font-medium">מטבח</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">יום רביעי, 16:00 - 00:00</p>
+                    </div>
+                    <span class="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs px-2 py-1 rounded">מאושר</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exchanges Section -->
+    <div id="exchanges" class="section hidden">
+        <div class="mt-6">
+            <h2 class="text-2xl font-bold mb-4">החלפות</h2>
+            <div class="exchange-form">
+                <form onsubmit="submitExchange(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block mb-2">בחר תורנות להחלפה</label>
+                            <select class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600">
+                                <option>שמירה - יום שני, 08:00 - 16:00</option>
+                                <option>מטבח - יום רביעי, 16:00 - 00:00</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block mb-2">סוג תורנות מבוקש</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="ml-2"> שמירות
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="ml-2"> מטבחים
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block mb-2">טווח תאריכים מבוקש</label>
+                            <input type="date" class="w-full p-2 border rounded mb-2 dark:bg-gray-700 dark:border-gray-600">
+                            <input type="date" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600">
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">פתח בקשת החלפה</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Section -->
+    <div id="calendar" class="section hidden">
+        <div class="mt-6">
+            <h2 class="text-2xl font-bold mb-4">לוח חודשי</h2>
+            <div class="calendar">
+                <!-- Calendar header -->
+                <div class="calendar-day font-bold">א</div>
+                <div class="calendar-day font-bold">ב</div>
+                <div class="calendar-day font-bold">ג</div>
+                <div class="calendar-day font-bold">ד</div>
+                <div class="calendar-day font-bold">ה</div>
+                <div class="calendar-day font-bold">ו</div>
+                <div class="calendar-day font-bold">ש</div>
+                <!-- Calendar days will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Constraints Section -->
+    <div id="constraints" class="section hidden">
+        <div class="mt-6">
+            <h2 class="text-2xl font-bold mb-4">האילוצים שלי</h2>
+            <div class="exchange-form">
+                <form onsubmit="submitConstraints(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block mb-2">בחר תאריכים לא זמינים</label>
+                            <input type="date" class="w-full p-2 border rounded mb-2 dark:bg-gray-700 dark:border-gray-600">
+                            <input type="date" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600">
+                        </div>
+                        <div>
+                            <label class="block mb-2">סיבה</label>
+                            <textarea class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">שמור אילוצים</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-20">
+    <div class="bg-white dark:bg-gray-800 rounded-t-2xl p-4 absolute bottom-0 left-0 right-0 max-w-[480px] mx-auto">
+        <div class="flex justify-between items-center mb-4">
+            <button onclick="closeSettings()" class="text-gray-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <h2 class="text-xl font-bold">הגדרות</h2>
+        </div>
+        <div class="space-y-4">
+            <div class="flex items-center justify-between">
+                <button id="darkModeToggle" class="w-12 h-6 bg-gray-200 rounded-full relative" onclick="toggleDarkMode()">
+                    <div class="w-4 h-4 bg-white rounded-full absolute left-1 top-1 transition-transform duration-200"></div>
+                </button>
+                <span>מצב כהה</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <button class="w-12 h-6 bg-blue-600 rounded-full relative" onclick="toggleNotifications()">
+                    <div class="w-4 h-4 bg-white rounded-full absolute right-1 top-1"></div>
+                </button>
+                <span>התראות</span>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="javaScript.js"></script>
+
+</body>
+</html>
