@@ -600,7 +600,9 @@ function createDutyCard(duty) {
        createDutyAssignmentModal();
        initializeSettings();
        updateDutiesSection();
-
+    if (document.getElementById('constraints')) {
+        updateConstraintsSection();
+    }
        // Add event listener for duty assignment form
        document.getElementById('dutyAssignmentForm').addEventListener('submit', handleDutyAssignment);
 
@@ -647,4 +649,206 @@ function updateDutiesSection() {
             </div>
         </div>
     `;
+}
+function updateConstraintsSection() {
+    const constraintsSection = document.getElementById('constraints');
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+    const monthNames = [
+        'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+        'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
+    ];
+
+    constraintsSection.innerHTML = `
+        <div class="mt-6">
+            <h2 class="text-2xl font-bold mb-4">האילוצים שלי</h2>
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
+                <h3 class="text-xl font-bold mb-6 text-center">
+                    אילוצים לחודש ${monthNames[nextMonth.getMonth()]}
+                </h3>
+                <div id="constraintsCalendar" class="grid grid-cols-7 gap-1 mb-6">
+                    <!-- Calendar will be populated by JavaScript -->
+                </div>
+                <div id="remainingConstraints" class="text-center mb-4">
+                    נשארו עוד 5 אילוצים לבחור
+                </div>
+                <button id="submitConstraints"
+                        class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors">
+                    שלח אילוצים
+                </button>
+            </div>
+        </div>
+    `;
+
+    populateCalendar(nextMonth);
+    initializeConstraintsHandlers();
+}
+
+function populateCalendar(date) {
+    const calendar = document.getElementById('constraintsCalendar');
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
+
+    // Add day headers
+    const daysOfWeek = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
+    daysOfWeek.forEach(day => {
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'text-center font-bold p-2';
+        dayHeader.textContent = day;
+        calendar.appendChild(dayHeader);
+    });
+
+    // Add empty cells for alignment
+    for (let i = 0; i < firstDayOfMonth; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'p-2';
+        calendar.appendChild(emptyCell);
+    }
+
+    // Add calendar days
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayElement = document.createElement('div');
+        dayElement.className = 'p-2 text-center rounded-lg cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-700';
+        dayElement.textContent = day;
+        dayElement.dataset.day = day;
+        calendar.appendChild(dayElement);
+    }
+}
+
+function updateConstraintsSection() {
+    const constraintsSection = document.getElementById('constraints');
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+    const monthNames = [
+        'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+        'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
+    ];
+
+    constraintsSection.innerHTML = `
+        <div class="mt-6">
+            <h2 class="text-2xl font-bold mb-4">האילוצים שלי</h2>
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
+                <h3 class="text-xl font-bold mb-6 text-center">
+                    אילוצים לחודש ${monthNames[nextMonth.getMonth()]}
+                </h3>
+                <div id="constraintsCalendar" class="grid grid-cols-7 gap-1 mb-6">
+                    <!-- Calendar will be populated by JavaScript -->
+                </div>
+                <div id="remainingConstraints" class="text-center mb-4">
+                    נשארו עוד 5 אילוצים לבחור
+                </div>
+                <button id="submitConstraints"
+                        class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors">
+                    שלח אילוצים
+                </button>
+            </div>
+        </div>
+    `;
+
+    populateCalendar(nextMonth);
+    initializeConstraintsHandlers();
+}
+
+function populateCalendar(date) {
+    const calendar = document.getElementById('constraintsCalendar');
+    calendar.innerHTML = ''; // Clear existing content
+
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
+
+    // Add day headers
+    const daysOfWeek = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
+    daysOfWeek.forEach(day => {
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'text-center font-bold p-2';
+        dayHeader.textContent = day;
+        calendar.appendChild(dayHeader);
+    });
+
+    // Add empty cells for alignment
+    for (let i = 0; i < firstDayOfMonth; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'p-2';
+        calendar.appendChild(emptyCell);
+    }
+
+    // Add calendar days
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayElement = document.createElement('div');
+        dayElement.className = 'p-2 text-center rounded-lg cursor-pointer transition-colors';
+        dayElement.textContent = day;
+        dayElement.dataset.day = day;
+        calendar.appendChild(dayElement);
+    }
+}
+
+function initializeConstraintsHandlers() {
+    const calendar = document.getElementById('constraintsCalendar');
+    const remainingText = document.getElementById('remainingConstraints');
+    const submitButton = document.getElementById('submitConstraints');
+    const MAX_CONSTRAINTS = 5;
+    const selectedDays = new Set();
+
+    calendar.addEventListener('click', (event) => {
+        const dayElement = event.target.closest('[data-day]');
+        if (!dayElement) return;
+
+        const day = parseInt(dayElement.dataset.day);
+
+        if (dayElement.classList.contains('bg-red-500')) {
+            // Deselect day
+            dayElement.classList.remove('bg-red-500', 'text-white');
+            selectedDays.delete(day);
+        } else if (selectedDays.size < MAX_CONSTRAINTS) {
+            // Select day - directly to red
+            dayElement.classList.add('bg-red-500', 'text-white');
+            selectedDays.add(day);
+        }
+
+        remainingText.textContent = `נשארו עוד ${MAX_CONSTRAINTS - selectedDays.size} אילוצים לבחור`;
+    });
+
+    submitButton.addEventListener('click', async () => {
+        try {
+            const userData = JSON.parse(localStorage.getItem('userData'));
+            if (!userData || !userData.phoneNumber) {
+                alert('אנא התחבר מחדש למערכת');
+                return;
+            }
+
+            // Get user document reference by phone number
+            const userSnapshot = await db.collection('users')
+                .where('phoneNumber', '==', userData.phoneNumber)
+                .get();
+
+            if (userSnapshot.empty) {
+                alert('לא נמצא משתמש במערכת');
+                return;
+            }
+
+            const userDoc = userSnapshot.docs[0];
+            const nextMonth = new Date();
+            nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+            // Update the user's constraints
+            await db.collection('users').doc(userDoc.id).update({
+                constraints: {
+                    month: nextMonth.getMonth() + 1,
+                    year: nextMonth.getFullYear(),
+                    days: Array.from(selectedDays)
+                }
+            });
+
+            alert('האילוצים נשמרו בהצלחה');
+        } catch (error) {
+            console.error('Error saving constraints:', error);
+            alert('שגיאה בשמירת האילוצים');
+        }
+    });
 }
