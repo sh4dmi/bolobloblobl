@@ -419,7 +419,6 @@ document.addEventListener('click', (event) => {
 async function loadUserDuties() {
     const userData = JSON.parse(localStorage.getItem('userData'));
     if (!userData) return;
-
     try {
         // Update user greeting
         const userGreeting = document.getElementById('userGreeting');
@@ -432,13 +431,14 @@ async function loadUserDuties() {
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-        // Fetch duties for current month
+        // Fetch duties for current month without ordering
         const dutiesSnapshot = await db.collection('duties')
             .where('userNumber', '==', userData.personalNumber)
             .where('date', '>=', startOfMonth)
             .where('date', '<=', endOfMonth)
-            .orderBy('date')
             .get();
+
+        console.log(dutiesSnapshot);
 
         // Get containers
         const guardDuties = document.getElementById('guardDuties');
@@ -455,9 +455,18 @@ async function loadUserDuties() {
         let hasKitchenDuties = false;
         let hasRasarDuties = false;
 
-        // Add duties to appropriate containers
+        // Collect all duties in an array
+        const duties = [];
         dutiesSnapshot.forEach(doc => {
             const duty = doc.data();
+            duties.push(duty);
+        });
+
+        // Sort duties by 'date' after fetching
+        duties.sort((a, b) => a.date.toDate() - b.date.toDate());
+
+        // Add duties to appropriate containers
+        duties.forEach(duty => {
             const dutyCard = createDutyCard(duty);
 
             switch (duty.kind) {
