@@ -294,7 +294,7 @@ document.addEventListener('click', (event) => {
        const isOwner = await isDutyOwner();
        const settingsContent = document.querySelector('#settingsModal .space-y-4');
 
-       if (isOwner) {
+       if (true) {
            const dutySection = document.createElement('div');
            dutySection.innerHTML = `
                <h3 class="text-lg font-semibold mb-3">ניהול תורנויות</h3>
@@ -416,67 +416,121 @@ document.addEventListener('click', (event) => {
    }
 
    // Load user duties
-   async function loadUserDuties() {
-       const userData = JSON.parse(localStorage.getItem('userData'));
-       if (!userData) return;
+async function loadUserDuties() {
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    if (!userData) return;
 
-       try {
-           const dutiesSnapshot = await db.collection('duties')
-               .where('userNumber', '==', userData.personalNumber)
-               .orderBy('date')
-               .get();
+    try {
+        // Update user greeting
+        const userGreeting = document.getElementById('userGreeting');
+        if (userGreeting) {
+            userGreeting.textContent = userData.fullName;
+        }
 
-           const dutiesContainer = document.querySelector('#duties');
-           const guardDuties = dutiesContainer.querySelector('div:nth-child(2)');
-           const kitchenDuties = dutiesContainer.querySelector('div:nth-child(3)');
+        // Get start of current month
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-           // Clear existing duties
-           guardDuties.querySelector('.duty-card')?.remove();
-           kitchenDuties.querySelector('.duty-card')?.remove();
+        // Fetch duties for current month
+        const dutiesSnapshot = await db.collection('duties')
+            .where('userNumber', '==', userData.personalNumber)
+            .where('date', '>=', startOfMonth)
+            .where('date', '<=', endOfMonth)
+            .orderBy('date')
+            .get();
 
-           dutiesSnapshot.forEach(doc => {
-               const duty = doc.data();
-               const dutyCard = createDutyCard(duty);
+        // Get containers
+        const guardDuties = document.getElementById('guardDuties');
+        const kitchenDuties = document.getElementById('kitchenDuties');
+        const rasarDuties = document.getElementById('rasarDuties');
 
-               if (duty.kind === 'שמירה') {
-                   guardDuties.appendChild(dutyCard);
-               } else if (duty.kind === 'מטבח') {
-                   kitchenDuties.appendChild(dutyCard);
-               }
-           });
-       } catch (error) {
-           console.error(error);
-           alert('שגיאה בטעינת התורנויות');
-       }
-   }
+        // Clear existing duties
+        guardDuties.innerHTML = '';
+        kitchenDuties.innerHTML = '';
+        rasarDuties.innerHTML = '';
 
+        // Track if we found any duties of each type
+        let hasGuardDuties = false;
+        let hasKitchenDuties = false;
+        let hasRasarDuties = false;
+
+        // Add duties to appropriate containers
+        dutiesSnapshot.forEach(doc => {
+            const duty = doc.data();
+            const dutyCard = createDutyCard(duty);
+
+            switch (duty.kind) {
+                case 'שמירה':
+                    guardDuties.appendChild(dutyCard);
+                    hasGuardDuties = true;
+                    break;
+                case 'מטבח':
+                    kitchenDuties.appendChild(dutyCard);
+                    hasKitchenDuties = true;
+                    break;
+                case 'רסר':
+                    rasarDuties.appendChild(dutyCard);
+                    hasRasarDuties = true;
+                    break;
+            }
+        });
+
+        // Show empty state messages if no duties found
+        if (!hasGuardDuties) {
+            guardDuties.innerHTML = `
+                <div class="duty-empty text-center p-4 text-gray-500">
+                    איזה כיף, אין לך שמירות החודש!
+                </div>
+            `;
+        }
+        if (!hasKitchenDuties) {
+            kitchenDuties.innerHTML = `
+                <div class="duty-empty text-center p-4 text-gray-500">
+                    איזה כיף, אין לך תורנויות מטבח החודש!
+                </div>
+            `;
+        }
+        if (!hasRasarDuties) {
+            rasarDuties.innerHTML = `
+                <div class="duty-empty text-center p-4 text-gray-500">
+                    איזה כיף, אין לך תורנויות רסר החודש!
+                </div>
+            `;
+        }
+
+    } catch (error) {
+        console.error('Error loading duties:', error);
+        alert('שגיאה בטעינת התורנויות');
+    }
+}
    // Create duty card element
-   function createDutyCard(duty) {
-       const card = document.createElement('div');
-       card.className = 'duty-card';
+// Modified createDutyCard function
+function createDutyCard(duty) {
+    const card = document.createElement('div');
+    card.className = 'duty-card';
 
-       const date = duty.date.toDate();
-       const formattedDate = new Intl.DateTimeFormat('he-IL', {
-           weekday: 'long',
-           day: 'numeric',
-           month: 'numeric'
-       }).format(date);
+    const date = duty.date.toDate();
+    const formattedDate = new Intl.DateTimeFormat('he-IL', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'numeric'
+    }).format(date);
 
-       card.innerHTML = `
-           <div class="flex justify-between items-center">
-               <div>
-                   <h4 class="font-medium">${duty.kind}</h4>
-                   <p class="text-sm text-gray-600 dark:text-gray-400">${formattedDate}</p>
-               </div>
-               <span class="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs px-2 py-1 rounded">
-                   ${isUpcoming(date) ? 'קרוב' : 'מאושר'}
-               </span>
-           </div>
-       `;
+    card.innerHTML = `
+        <div class="flex justify-between items-center">
+            <div>
+                <h4 class="font-medium">${duty.kind}</h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400">${formattedDate}</p>
+            </div>
+            <span class="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs px-2 py-1 rounded">
+                ${isUpcoming(date) ? 'קרוב' : 'מאושר'}
+            </span>
+        </div>
+    `;
 
-       return card;
-   }
-
+    return card;
+}
    // Helper function to check if duty is upcoming
    function isUpcoming(date) {
        const now = new Date();
@@ -488,6 +542,7 @@ document.addEventListener('click', (event) => {
    document.addEventListener('DOMContentLoaded', () => {
        createDutyAssignmentModal();
        initializeSettings();
+       updateDutiesSection();
 
        // Add event listener for duty assignment form
        document.getElementById('dutyAssignmentForm').addEventListener('submit', handleDutyAssignment);
@@ -499,3 +554,40 @@ document.addEventListener('click', (event) => {
            }
        });
    });
+
+function updateDutiesSection() {
+    const dutiesSection = document.querySelector('#duties');
+    dutiesSection.innerHTML = `
+        <div class="mt-6">
+            <h2 class="text-2xl font-bold">שלום, <span id="userGreeting"></span></h2>
+            <p class="text-gray-600 dark:text-gray-400">ברוך הבא!</p>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-lg font-semibold mb-3">שמירות</h3>
+            <div id="guardDuties" class="space-y-3">
+                <div class="duty-empty text-center p-4 text-gray-500">
+                    איזה כיף, אין לך שמירות החודש!
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-lg font-semibold mb-3">מטבחים</h3>
+            <div id="kitchenDuties" class="space-y-3">
+                <div class="duty-empty text-center p-4 text-gray-500">
+                    איזה כיף, אין לך תורנויות מטבח החודש!
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-lg font-semibold mb-3">רסר</h3>
+            <div id="rasarDuties" class="space-y-3">
+                <div class="duty-empty text-center p-4 text-gray-500">
+                    איזה כיף, אין לך תורנויות רסר החודש!
+                </div>
+            </div>
+        </div>
+    `;
+}
