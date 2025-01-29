@@ -153,54 +153,66 @@ document.addEventListener('click', (event) => {
    }
 
    // Login handler
-   async function handleLogin(event) {
-       event.preventDefault();
+async function handleLogin(event) {
+    event.preventDefault();
 
-       const phoneNumber = document.getElementById('loginPhone').value;
-       const password = document.getElementById('loginPassword').value;
+    const phoneNumber = document.getElementById('loginPhone').value;
+    const password = document.getElementById('loginPassword').value;
 
-       try {
-           // Check if user exists in Firestore
-           const userSnapshot = await db.collection('users')
-               .where('phoneNumber', '==', phoneNumber)
-               .get();
+    try {
+        // Check if user exists in Firestore
+        const userSnapshot = await db.collection('users')
+            .where('phoneNumber', '==', phoneNumber)
+            .get();
 
-           if (userSnapshot.empty) {
-               alert('מספר טלפון או סיסמה שגויים');
-               return;
-           }
+        if (userSnapshot.empty) {
+            alert('מספר טלפון או סיסמה שגויים');
+            return;
+        }
 
-           // Sign in with Firebase Auth
-           const userCredential = await auth.signInWithEmailAndPassword(
-               `${phoneNumber}@dutyassign.com`,
-               password
-           );
+        // Sign in with Firebase Auth
+        const userCredential = await auth.signInWithEmailAndPassword(
+            `${phoneNumber}@dutyassign.com`,
+            password
+        );
 
-           // Store user data
-           const userData = userSnapshot.docs[0].data();
-           localStorage.setItem('userData', JSON.stringify({
-               fullName: userData.fullName,
-               phoneNumber: userData.phoneNumber,
-               personalNumber: userData.personalNumber,
-               releaseDate: userData.releaseDate
-           }));
+        // Get the actual document data
+        const userData = userSnapshot.docs[0].data();
+        const userId = userSnapshot.docs[0].id;
 
-           // Hide login wrapper and show app wrapper
-           document.getElementById('loginWrapper').style.display = 'none';
-           document.getElementById('appWrapper').style.display = 'block';
+        // Explicitly get the isOwner value from Firestore
+        const userDoc = await db.collection('users').doc(userId).get();
+        const currentIsOwner = userDoc.data().isOwner;
 
-           // Update displayed name
-           const userGreeting = document.querySelector('#duties h2');
-           if (userGreeting) {
-               userGreeting.textContent = `שלום, ${userData.fullName}`;
-           }
+        // Store user data with explicit isOwner value
+        const userDataToStore = {
+            fullName: userData.fullName,
+            phoneNumber: userData.phoneNumber,
+            personalNumber: userData.personalNumber,
+            releaseDate: userData.releaseDate,
+            isOwner: currentIsOwner // Explicitly store the current isOwner value
+        };
 
-       } catch (error) {
-           console.error(error);
-           alert('מספר טלפון או סיסמה שגויים');
-       }
-   }
+        localStorage.setItem('userData', JSON.stringify(userDataToStore));
 
+        // Hide login wrapper and show app wrapper
+        document.getElementById('loginWrapper').style.display = 'none';
+        document.getElementById('appWrapper').style.display = 'block';
+
+        // Update displayed name
+        const userGreeting = document.querySelector('#duties h2');
+        if (userGreeting) {
+            userGreeting.textContent = `שלום, ${userData.fullName}`;
+        }
+
+        // Immediately initialize settings with new isOwner value
+        await initializeSettings();
+
+    } catch (error) {
+        console.error(error);
+        alert('מספר טלפון או סיסמה שגויים');
+    }
+}
    // Registration handler
    async function handleRegister(event) {
        event.preventDefault();
@@ -210,7 +222,7 @@ document.addEventListener('click', (event) => {
        const personalNumber = document.getElementById('personalNumber').value;
        const releaseDate = document.getElementById('releaseDate').value;
        const password = document.getElementById('password').value;
-
+       const isOwner = false;
        try {
            // Check if user exists
            const existingUser = await db.collection('users')
@@ -234,7 +246,8 @@ document.addEventListener('click', (event) => {
                phoneNumber,
                personalNumber,
                releaseDate,
-               createdAt: firebase.firestore.FieldValue.serverTimestamp()
+               createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+               isOwner
            });
 
            alert('ההרשמה הושלמה בהצלחה!');
@@ -244,7 +257,8 @@ document.addEventListener('click', (event) => {
                fullName,
                phoneNumber,
                personalNumber,
-               releaseDate
+               releaseDate,
+               isOwner
            }));
 
            // Hide login wrapper and show app wrapper
@@ -281,31 +295,63 @@ document.addEventListener('click', (event) => {
            }
        }
    });
-   async function isDutyOwner() {
-       const user = auth.currentUser;
-       if (!user) return false;
+// Modified isDutyOwner function with real-time check
+async function isDutyOwner() {
+    try {
+        const userData = JSON.parse(localStorage.getItem('userData'));
+        if (!userData || !userData.phoneNumber) return false;
 
-       const userDoc = await db.collection('users').doc(user.uid).get();
-       return userDoc.data()?.isOwner || false;
-   }
+        // Get fresh data from Firestore
+        const userSnapshot = await db.collection('users')
+            .where('phoneNumber', '==', userData.phoneNumber)
+            .get();
 
-   // Function to add duty assignment UI to settings for owners
-   async function initializeSettings() {
-       const isOwner = await isDutyOwner();
-       const settingsContent = document.querySelector('#settingsModal .space-y-4');
+        if (userSnapshot.empty) return false;
 
-       if (true) {
-           const dutySection = document.createElement('div');
-           dutySection.innerHTML = `
-               <h3 class="text-lg font-semibold mb-3">ניהול תורנויות</h3>
-               <button onclick="showDutyAssignmentModal()"
-                       class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
-                   הוספת תורנות
-               </button>
-           `;
-           settingsContent.appendChild(dutySection);
-       }
-   }
+        const freshUserData = userSnapshot.docs[0].data();
+
+        // Update localStorage with fresh data
+        userData.isOwner = freshUserData.isOwner;
+        localStorage.setItem('userData', JSON.stringify(userData));
+
+        return freshUserData.isOwner;
+    } catch (error) {
+        console.error('Error checking isOwner status:', error);
+        return false;
+    }
+}
+
+// Modified initializeSettings function
+async function initializeSettings() {
+    try {
+        const isOwner = await isDutyOwner();
+        const settingsContent = document.querySelector('#settingsModal .space-y-4');
+
+        if (!settingsContent) return;
+
+        // Remove existing duty section if it exists
+        const existingDutySection = settingsContent.querySelector('.duty-section');
+        if (existingDutySection) {
+            existingDutySection.remove();
+        }
+
+        if (isOwner) {
+            const dutySection = document.createElement('div');
+            dutySection.className = 'duty-section';
+            dutySection.innerHTML = `
+                <h3 class="text-lg font-semibold mb-3">ניהול תורנויות</h3>
+                <button onclick="showDutyAssignmentModal()"
+                        class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+                    הוספת תורנות
+                </button>
+            `;
+            settingsContent.appendChild(dutySection);
+        }
+    } catch (error) {
+        console.error('Error initializing settings:', error);
+    }
+}
+
 
    // Function to load all users for the dropdown
    async function loadUsers() {
@@ -319,6 +365,7 @@ document.addEventListener('click', (event) => {
                const option = document.createElement('option');
                option.value = userData.personalNumber;
                option.textContent = userData.fullName;
+               option.isOwner = userData.isOwner;
                userSelect.appendChild(option);
            });
        } catch (error) {
