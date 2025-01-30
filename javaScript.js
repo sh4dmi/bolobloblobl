@@ -1243,3 +1243,297 @@ async function confirmSwitch(switchId) {
         alert('שגיאה בביטול בקשת ההחלפה');
     }
 }
+// Calendar management functions
+function updateCalendarUI() {
+    const calendarSection = document.getElementById('calendar');
+    if (!calendarSection) return;
+
+    const calendarHTML = `
+        <div class="mt-6">
+            <h2 class="text-2xl font-bold mb-4">לוח חודשי</h2>
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
+                <div id="dutyCalendar">
+                    <div id="calendarHeader" class="grid grid-cols-7 gap-1 mb-2 text-center font-bold">
+                        <div>א</div>
+                        <div>ב</div>
+                        <div>ג</div>
+                        <div>ד</div>
+                        <div>ה</div>
+                        <div>ו</div>
+                        <div>ש</div>
+                    </div>
+                    <div id="calendarGrid" class="grid grid-cols-7 gap-1"></div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    calendarSection.innerHTML = calendarHTML;
+    loadCalendarData();
+}
+
+async function loadCalendarData() {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    try {
+        const dutiesSnapshot = await db.collection('duties')
+            .where('date', '>=', startOfMonth)
+            .where('date', '<=', endOfMonth)
+            .get();
+
+        const dutiesMap = {};
+
+        dutiesSnapshot.forEach(doc => {
+            const duty = doc.data();
+            const date = duty.date.toDate().toDateString();
+            if (!dutiesMap[date]) {
+                dutiesMap[date] = [];
+            }
+            dutiesMap[date].push(duty);
+        });
+
+        renderCalendar(dutiesMap);
+    } catch (error) {
+        console.error('Error loading duties:', error);
+    }
+}
+
+function renderCalendar(dutiesMap) {
+    const calendarGrid = document.getElementById('calendarGrid');
+    if (!calendarGrid) return;
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    const firstDay = startOfMonth.getDay();
+    const totalDays = endOfMonth.getDate();
+
+    let calendarHTML = '';
+
+    // Add empty cells for days before the first of the month
+    for (let i = 0; i < firstDay; i++) {
+        calendarHTML += `<div class="p-2 text-center"></div>`;
+    }
+
+    // Add calendar days
+    for (let day = 1; day <= totalDays; day++) {
+        const date = new Date(now.getFullYear(), now.getMonth(), day);
+        const dateStr = date.toDateString();
+        const duties = dutiesMap[dateStr] || [];
+
+        calendarHTML += `
+            <div
+                class="p-2 border rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-center relative"
+                onclick="showDutyDetails('${date.toISOString()}', ${duties.length})"
+            >
+                <div class="font-medium">${day}</div>
+                ${duties.length > 0 ? `
+                    <div class="text-xs text-blue-600 dark:text-blue-400">
+                        ${duties.length} תורנויות
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    calendarGrid.innerHTML = calendarHTML;
+}
+
+async function showDutyDetails(dateStr, dutyCount) {
+    const date = new Date(dateStr);
+
+    try {
+        // Fetch duties for the selected date
+        const dutiesSnapshot = await db.collection('duties')
+            .where('date', '>=', new Date(date.setHours(0, 0, 0, 0)))
+            .where('date', '<=', new Date(date.setHours(23, 59, 59, 999)))
+            .get();
+
+        const duties = [];
+
+        // Get user details for each duty
+        for (const doc of dutiesSnapshot.docs) {
+            const duty = doc.data();
+            const userSnapshot = await db.collection('users')
+                .where('personalNumber', '==', duty.userNumber)
+                .get();
+
+            const userData = userSnapshot.docs[0]?.data() || {};
+            duties.push({
+                ...duty,
+                userName: userData.fullName || 'Unknown'
+            });
+        }
+
+        // Create and show modal
+        const modalHTML = `
+            <div id="dutyModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-11/12">
+                    <h3 class="text-lg font-bold mb-4">
+                        תורנויות ליום ${date.toLocaleDateString('he-IL')}
+                    </h3>
+
+                    <div class="space-y-3">
+                        ${duties.length > 0 ? duties.map(duty => `
+                            <div class="p-3 border rounded dark:border-gray-700">
+                                <div class="font-medium">${duty.kind}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">
+                                    ${duty.userName}
+                                </div>
+                            </div>
+                        `).join('') : `
+                            <div class="text-center text-gray-500">
+                                אין תורנויות ביום זה
+                            </div>
+                        `}
+                    </div>
+
+                    <button
+                        onclick="closeDutyModal()"
+                        class="w-full mt-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                        סגור
+                    </button>
+                </div>
+            </div>
+        `;
+
+        // Add modal to document
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    } catch (error) {
+        console.error('Error showing duty details:', error);
+    }
+}
+
+function closeDutyModal() {
+    const modal = document.getElementById('dutyModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Initialize calendar when needed
+function initializeCalendar() {
+    updateCalendarUI();
+}
+
+// Load duties for the current month
+async function loadCalendarDuties() {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    try {
+        const dutiesSnapshot = await db.collection('duties')
+            .where('date', '>=', startOfMonth)
+            .where('date', '<=', endOfMonth)
+            .get();
+
+        const dutiesPerDay = {};
+        dutiesSnapshot.forEach(doc => {
+            const duty = doc.data();
+            const dateStr = duty.date.toDate().toDateString();
+            dutiesPerDay[dateStr] = (dutiesPerDay[dateStr] || 0) + 1;
+        });
+
+        populateCalendar(dutiesPerDay);
+    } catch (error) {
+        console.error('Error loading duties:', error);
+    }
+}
+
+// Populate calendar with days and duty counts
+function populateCalendar(dutiesPerDay) {
+    const calendar = document.querySelector('.calendar');
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // Clear existing calendar days (except header)
+    const days = calendar.querySelectorAll('.calendar-day:not(.font-bold)');
+    days.forEach(day => day.remove());
+
+    // Calculate first day of month and total days
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    // Add empty cells before first day
+    for (let i = 0; i < firstDay; i++) {
+        const emptyDay = document.createElement('div');
+        emptyDay.className = 'calendar-day';
+        calendar.appendChild(emptyDay);
+    }
+
+    // Add days of the month
+    for (let date = 1; date <= lastDate; date++) {
+        const dayElement = document.createElement('div');
+        dayElement.className = 'calendar-day';
+
+        const currentDate = new Date(currentYear, currentMonth, date);
+        const duties = dutiesPerDay[currentDate.toDateString()] || 0;
+
+        dayElement.innerHTML = `
+            <span>${date}</span>
+            ${duties > 0 ? `<span class="duty-count">${duties} תורנויות</span>` : ''}
+        `;
+
+        dayElement.onclick = () => showDayDuties(currentDate);
+        calendar.appendChild(dayElement);
+    }
+}
+
+// Show duties for selected day
+async function showDayDuties(date) {
+    try {
+        const startOfDay = new Date(date.setHours(0, 0, 0, 0));
+        const endOfDay = new Date(date.setHours(23, 59, 59, 999));
+
+        const dutiesSnapshot = await db.collection('duties')
+            .where('date', '>=', startOfDay)
+            .where('date', '<=', endOfDay)
+            .get();
+
+        let dutiesHTML = '';
+
+        for (const doc of dutiesSnapshot.docs) {
+            const duty = doc.data();
+            const userSnapshot = await db.collection('users')
+                .where('personalNumber', '==', duty.userNumber)
+                .get();
+
+            const userData = userSnapshot.docs[0]?.data() || {};
+
+            dutiesHTML += `
+                <div class="p-3 border rounded mb-2 dark:border-gray-700">
+                    <div class="font-medium">${duty.kind}</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">${userData.fullName || 'Unknown'}</div>
+                </div>
+            `;
+        }
+
+        // Create and show modal
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        modal.innerHTML = `
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-11/12">
+                <h3 class="text-lg font-bold mb-4">
+                    תורנויות ליום ${date.toLocaleDateString('he-IL')}
+                </h3>
+                <div class="max-h-60 overflow-y-auto">
+                    ${dutiesHTML || '<div class="text-center text-gray-500">אין תורנויות ביום זה</div>'}
+                </div>
+                <button onclick="this.closest('.fixed').remove()"
+                        class="w-full mt-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    סגור
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+    } catch (error) {
+        console.error('Error showing duties:', error);
+    }}
