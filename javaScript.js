@@ -1361,9 +1361,10 @@ async function populateCalendar() {
     const year = now.getFullYear();
     const month = now.getMonth();
 
-    // Clear existing days (except header)
-    const days = calendar.querySelectorAll('.calendar-day:not(.font-bold)');
-    days.forEach(day => day.remove());
+    // Clear existing calendar days
+    while (calendar.children.length > 7) { // Keep the header row
+        calendar.removeChild(calendar.lastChild);
+    }
 
     // Get first day of month and total days
     const firstDay = new Date(year, month, 1).getDay();
@@ -1372,7 +1373,7 @@ async function populateCalendar() {
     // Add empty cells for days before start of month
     for (let i = 0; i < firstDay; i++) {
         const emptyCell = document.createElement('div');
-        emptyCell.className = 'calendar-day';
+        emptyCell.className = 'calendar-day empty';
         calendar.appendChild(emptyCell);
     }
 
@@ -1382,20 +1383,24 @@ async function populateCalendar() {
         const duties = await getDutiesForDay(date);
 
         const dayElement = document.createElement('div');
-        dayElement.className = 'calendar-day cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors';
+        dayElement.className = 'calendar-day cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors';
+
+        // Highlight current day
+        if (day === now.getDate() && month === now.getMonth()) {
+            dayElement.className += ' current-day';
+        }
 
         const dateElement = document.createElement('div');
-        dateElement.className = 'text-lg font-medium';
+        dateElement.className = 'text-lg';
         dateElement.textContent = day;
 
         const dutiesCount = document.createElement('div');
-        dutiesCount.className = `text-sm ${duties.length > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'}`;
-        dutiesCount.textContent = duties.length > 0 ? `${duties.length} תורנויות` : 'אין תורנויות';
+        dutiesCount.className = `text-xs ${duties.length > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'}`;
+        dutiesCount.textContent = duties.length > 0 ? `${duties.length} תורנויות` : 'אין';
 
         dayElement.appendChild(dateElement);
         dayElement.appendChild(dutiesCount);
 
-        // Add click handler to show duties modal
         dayElement.addEventListener('click', () => {
             showDutiesModal(date, duties);
         });
@@ -1403,7 +1408,6 @@ async function populateCalendar() {
         calendar.appendChild(dayElement);
     }
 }
-
 // Initialize calendar when showing calendar section
 function showSection(sectionId) {
     document.querySelectorAll('.section').forEach(section => {
