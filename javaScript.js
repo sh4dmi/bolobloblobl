@@ -1,8 +1,36 @@
 // Dark mode functionality
 const darkModeToggle = document.getElementById('darkModeToggle');
 const body = document.body;
+
+// Add CSS styles for calendar
 const style = document.createElement('style');
+style.textContent = `
+    .calendar {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+        padding: 16px;
+        background: var(--bg-color);
+        border-radius: 8px;
+    }
+
+    .calendar-day {
+        aspect-ratio: 1;
+        padding: 8px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .duties-modal {
+        direction: rtl;
+    }
+`;
 document.head.appendChild(style);
+
 function toggleDarkMode() {
     body.classList.toggle('dark-mode');
     const toggle = darkModeToggle.querySelector('div');
@@ -1242,4 +1270,152 @@ async function confirmSwitch(switchId) {
         console.error('Error canceling switch request:', error);
         alert('שגיאה בביטול בקשת ההחלפה');
     }
+}
+
+// Function to get all duties for a specific day
+async function getDutiesForDay(date) {
+    try {
+        const startOfDay = new Date(date);
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const endOfDay = new Date(date);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const dutiesSnapshot = await db.collection('duties')
+            .where('date', '>=', startOfDay)
+            .where('date', '<=', endOfDay)
+            .get();
+
+        const duties = [];
+        for (const doc of dutiesSnapshot.docs) {
+            const duty = doc.data();
+            // Get user info
+            const userSnapshot = await db.collection('users')
+                .where('personalNumber', '==', duty.userNumber)
+                .get();
+
+            const userData = userSnapshot.docs[0]?.data() || {};
+
+            duties.push({
+                ...duty,
+                userName: userData.fullName || 'לא ידוע'
+            });
+        }
+
+        return duties;
+    } catch (error) {
+        console.error('Error fetching duties:', error);
+        return [];
+    }
+}
+
+// Function to show duties modal for a specific day
+function showDutiesModal(date, duties) {
+    // Remove existing modal if any
+    const existingModal = document.querySelector('.duties-modal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    const formattedDate = new Date(date).toLocaleDateString('he-IL', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
+    const modal = document.createElement('div');
+    modal.className = 'duties-modal fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center';
+
+    const dutiesList = duties.length > 0
+        ? duties.map(duty => `
+            <div class="duty-item border-b border-gray-200 dark:border-gray-700 py-2 last:border-0">
+                <div class="font-medium">${duty.kind}</div>
+                <div class="text-sm text-gray-600 dark:text-gray-400">${duty.userName}</div>
+            </div>
+        `).join('')
+        : '<div class="text-center text-gray-500">אין תורנויות ביום זה</div>';
+
+    modal.innerHTML = `
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 w-11/12 max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">${formattedDate}</h2>
+                <button onclick="this.closest('.duties-modal').remove()"
+                        class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                    ✕
+                </button>
+            </div>
+            <div class="space-y-2">
+                ${dutiesList}
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+}
+
+// Updated calendar population function
+async function populateCalendar() {
+    const calendar = document.querySelector('.calendar');
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+
+    // Clear existing days (except header)
+    const days = calendar.querySelectorAll('.calendar-day:not(.font-bold)');
+    days.forEach(day => day.remove());
+
+    // Get first day of month and total days
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Add empty cells for days before start of month
+    for (let i = 0; i < firstDay; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'calendar-day';
+        calendar.appendChild(emptyCell);
+    }
+
+    // Add calendar days
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const duties = await getDutiesForDay(date);
+
+        const dayElement = document.createElement('div');
+        dayElement.className = 'calendar-day cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors';
+
+        const dateElement = document.createElement('div');
+        dateElement.className = 'text-lg font-medium';
+        dateElement.textContent = day;
+
+        const dutiesCount = document.createElement('div');
+        dutiesCount.className = `text-sm ${duties.length > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'}`;
+        dutiesCount.textContent = duties.length > 0 ? `${duties.length} תורנויות` : 'אין תורנויות';
+
+        dayElement.appendChild(dateElement);
+        dayElement.appendChild(dutiesCount);
+
+        // Add click handler to show duties modal
+        dayElement.addEventListener('click', () => {
+            showDutiesModal(date, duties);
+        });
+
+        calendar.appendChild(dayElement);
+    }
+}
+
+// Initialize calendar when showing calendar section
+function showSection(sectionId) {
+    document.querySelectorAll('.section').forEach(section => {
+        section.classList.add('hidden');
+    });
+    document.getElementById(sectionId).classList.remove('hidden');
+
+    // If showing calendar section, populate it
+    if (sectionId === 'calendar') {
+        populateCalendar();
+    }
+
+    // Close menu
+    document.getElementById('navMenu').classList.remove('active');
 }
