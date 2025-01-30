@@ -741,6 +741,7 @@ function updateConstraintsSection() {
     `;
 
     populateCalendar(nextMonth);
+    populateCalendar2(nextMonth);
     initializeConstraintsHandlers();
     initializePreferencesHandlers();
 }
@@ -1440,14 +1441,14 @@ async function loadCalendarDuties() {
             dutiesPerDay[dateStr] = (dutiesPerDay[dateStr] || 0) + 1;
         });
 
-        populateCalendar(dutiesPerDay);
+        populateCalendar2(dutiesPerDay);
     } catch (error) {
         console.error('Error loading duties:', error);
     }
 }
 
 // Populate calendar with days and duty counts
-function populateCalendar(dutiesPerDay) {
+function populateCalendar2(dutiesPerDay) {
     const calendar = document.querySelector('.calendar');
     const now = new Date();
     const currentMonth = now.getMonth();
