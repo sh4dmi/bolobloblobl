@@ -1096,7 +1096,7 @@ async function handleSwitchChoice(switchId, assignmentId) {
         });
 
         // Close the modal if it exists
-        const modal = document.querySelector('.fixed');
+        const modal = document.querySelector('.modal-overlay');
         if (modal) {
             modal.remove();
         }
@@ -1104,9 +1104,10 @@ async function handleSwitchChoice(switchId, assignmentId) {
         // Show success message
         alert('ההחלפה בוצעה בהצלחה');
 
-        // Navigate to main screen and ensure UI is visible
-        document.getElementById('appWrapper').style.display = 'block';
+        // Properly navigate to duties section
         showSection('duties');
+        
+        // Refresh the duties display
         loadUserDuties();
 
     } catch (error) {
@@ -1436,32 +1437,54 @@ function initializeCalendar() {
 
 // Load duties for the current month
 async function loadCalendarDuties() {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
     try {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
+        
+        // Create start and end dates for the current month
+        const startOfMonth = new Date(currentYear, currentMonth, 1, 0, 0, 0);
+        const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999);
+
+        // Get all duties for the current month
         const dutiesSnapshot = await db.collection('duties')
             .where('date', '>=', startOfMonth)
             .where('date', '<=', endOfMonth)
             .get();
 
+        // Initialize duties count object
         const dutiesPerDay = {};
+
+        // Count duties for each day
         dutiesSnapshot.forEach(doc => {
             const duty = doc.data();
-            const dateStr = duty.date.toDate().toDateString();
-            dutiesPerDay[dateStr] = (dutiesPerDay[dateStr] || 0) + 1;
+            // Convert Firestore timestamp to Date
+            const dutyDate = new Date(duty.date.seconds * 1000);
+            const dayOfMonth = dutyDate.getDate();
+            
+            // Initialize or increment the count
+            if (!dutiesPerDay[dayOfMonth]) {
+                dutiesPerDay[dayOfMonth] = 0;
+            }
+            dutiesPerDay[dayOfMonth]++;
         });
 
+        console.log('Duties found:', dutiesSnapshot.size); // Debug log
+        console.log('Duties per day:', dutiesPerDay); // Debug log
+
+        // Update calendar with the counts
         populateCalendar2(dutiesPerDay);
+
     } catch (error) {
-        console.error('Error loading duties:', error);
+        console.error('Error loading calendar duties:', error);
     }
 }
 
-// Populate calendar with days and duty counts
+// Update the calendar display function
 function populateCalendar2(dutiesPerDay) {
     const calendar = document.querySelector('.calendar');
+    if (!calendar) return;
+
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
@@ -1470,7 +1493,6 @@ function populateCalendar2(dutiesPerDay) {
     const days = calendar.querySelectorAll('.calendar-day:not(.font-bold)');
     days.forEach(day => day.remove());
 
-    // Calculate first day of month and total days
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
     const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
 
@@ -1485,16 +1507,16 @@ function populateCalendar2(dutiesPerDay) {
     for (let date = 1; date <= lastDate; date++) {
         const dayElement = document.createElement('div');
         dayElement.className = 'calendar-day';
-
-        const currentDate = new Date(currentYear, currentMonth, date);
-        const duties = dutiesPerDay[currentDate.toDateString()] || 0;
-
+        
+        // Get the count for this day (0 if no duties)
+        const duties = dutiesPerDay[date] || 0;
+        
         dayElement.innerHTML = `
             <span>${date}</span>
-            ${duties > 0 ? `<span class="duty-count">${duties} תורנויות</span>` : ''}
+            <span class="duty-count">${duties}</span>
         `;
 
-        dayElement.onclick = () => showDayDuties(currentDate);
+        dayElement.onclick = () => showDayDuties(new Date(currentYear, currentMonth, date));
         calendar.appendChild(dayElement);
     }
 }
