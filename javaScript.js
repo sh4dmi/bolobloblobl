@@ -1571,4 +1571,4 @@ async function showDayDuties(date) {
         document.body.appendChild(modal);
     } catch (error) {
         console.error('Error showing duties:', error);
-    }}
+    }} 
