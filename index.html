@@ -293,13 +293,15 @@
         <div id="exchanges" class="section hidden">
             <div class="mt-6">
                 <h2 class="text-2xl font-bold mb-4">החלפות</h2>
-                <div class="flex justify-between mb-4">
-                    <!-- Toggle Button -->
-                    <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                        <input type="checkbox" name="toggle" id="toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" onclick="toggleSwitchesFilter()"/>
-                        <label for="toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                <div class="flex justify-center mb-4">
+                    <div class="inline-flex bg-gray-100 rounded-lg shadow-sm">
+                        <button id="btnAll" class="min-w-[180px] px-6 py-2 text-sm font-medium rounded-r-lg border-l transition-all duration-200" onclick="toggleSwitchesFilter(false)">
+                            כל ההחלפות
+                        </button>
+                        <button id="btnAvailable" class="min-w-[180px] px-6 py-2 text-sm font-medium rounded-l-lg transition-all duration-200" onclick="toggleSwitchesFilter(true)">
+                            זמין עבורי
+                        </button>
                     </div>
-                    <span id="toggleLabel" class="text-sm text-gray-700 dark:text-gray-300">כל ההחלפות</span>
                 </div>
                 <div id="switchRequests" class="space-y-3">
                     <!-- Switch requests will be populated here -->

@@ -1113,18 +1113,30 @@ async function handleSwitchChoice(switchId, assignmentId) {
         console.error('Error in handleSwitchChoice:', error);
         alert('שגיאה בביצוע ההחלפה');
     }
-} function toggleSwitchesFilter() {
-     const toggle = document.getElementById('toggle');
-     const label = document.getElementById('toggleLabel');
+}
+function toggleSwitchesFilter(isAvailable) {
+    const btnAll = document.getElementById('btnAll');
+    const btnAvailable = document.getElementById('btnAvailable');
+    
+    if (isAvailable) {
+        btnAvailable.classList.add('bg-blue-600', 'text-white');
+        btnAvailable.classList.remove('bg-gray-100', 'text-gray-700');
+        btnAll.classList.add('bg-gray-100', 'text-gray-700');
+        btnAll.classList.remove('bg-blue-600', 'text-white');
+    } else {
+        btnAll.classList.add('bg-blue-600', 'text-white');
+        btnAll.classList.remove('bg-gray-100', 'text-gray-700');
+        btnAvailable.classList.add('bg-gray-100', 'text-gray-700');
+        btnAvailable.classList.remove('bg-blue-600', 'text-white');
+    }
+    
+    loadSwitchRequests(isAvailable ? 'available' : 'all');
+}
 
-     if (toggle.checked) {
-         label.textContent = 'זמין עבורי';
-         loadSwitchRequests('available');
-     } else {
-         label.textContent = 'כל ההחלפות';
-         loadSwitchRequests('all');
-     }
- }
+// Set initial state when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    toggleSwitchesFilter(false);  // Start with 'כל ההחלפות' active
+});
 
 async function getUserAvailableAssignments(userNumber, startDate, endDate) {
     try {
