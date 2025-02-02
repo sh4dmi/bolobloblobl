@@ -698,11 +698,11 @@ function updateConstraintsSection() {
                     <div class="space-x-4 flex">
                         <label class="flex items-center">
                             <input type="radio" name="shootingRange" value="yes" class="ml-2">
-                            כן
+                            <span class="ml-[5px]">כן</span>
                         </label>
                         <label class="flex items-center">
                             <input type="radio" name="shootingRange" value="no" class="ml-2">
-                            לא
+                            <span class="ml-[5px]">לא</span>
                         </label>
                     </div>
                 </div>
@@ -713,11 +713,11 @@ function updateConstraintsSection() {
                     <div class="space-x-4 flex">
                         <label class="flex items-center">
                             <input type="radio" name="isDistant" value="yes" class="ml-2">
-                            כן
+                            <span class="ml-[5px]">כן</span>
                         </label>
                         <label class="flex items-center">
                             <input type="radio" name="isDistant" value="no" class="ml-2">
-                            לא
+                            <span class="ml-[5px]">לא</span>
                         </label>
                     </div>
                 </div>

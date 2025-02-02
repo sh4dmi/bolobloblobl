@@ -362,11 +362,11 @@
         </div>
     </div>
 
-        <!-- Constraintsf Se ction -->
+        <!-- Constraints Section -->
         <div id="constraints" class="section hidden">
             <div class="mt-6">
                 <h2 class="text-2xl font-bold mb-4">האילוצים שלי</h2>
-                <div class="exchange-form">
+                <div class="exchange-form mb-20">
                     <form onsubmit="submitConstraints(event)">
                         <div class="space-y-4">
                             <div>
@@ -381,21 +381,21 @@
                             <div class="space-x-4 flex">
                                 <label class="flex items-center">
                                     <input type="radio" name="shootingRange" value="yes" class="ml-2">
-                                    <span class="mr-5">כן</span>
+                                    <span style="margin-left: 5px;">כן</span>
                                 </label>
                                 <label class="flex items-center">
                                     <input type="radio" name="shootingRange" value="no" class="ml-2">
-                                    <span class="mr-5">לא</span>
+                                    <span style="margin-left: 5px;">לא</span>
                                 </label>
                             </div>
                             <div class="space-x-4 flex">
                                 <label class="flex items-center">
                                     <input type="radio" name="isDistant" value="yes" class="ml-2">
-                                    <span class="mr-5">כן</span>
+                                    <span style="margin-left: 5px;">כן</span>
                                 </label>
                                 <label class="flex items-center">
                                     <input type="radio" name="isDistant" value="no" class="ml-2">
-                                    <span class="mr-5">לא</span>
+                                    <span style="margin-left: 5px;">לא</span>
                                 </label>
                             </div>
                             <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">שמור אילוצים</button>
@@ -409,13 +409,13 @@
     <!-- Settings Modal -->
     <div id="settingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-20">
         <div class="bg-white dark:bg-gray-800 rounded-t-2xl p-4 absolute bottom-0 left-0 right-0 max-w-[480px] mx-auto">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">הגדרות</h2>
-                <button onclick="closeSettings()" class="text-gray-500 mr-auto">
+            <div class="flex justify-between items-center mb-4" style="direction: ltr;">
+                <button onclick="closeSettings()" class="text-gray-500">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
+                <h2 class="text-xl font-bold ml-auto" style="direction: rtl;">הגדרות</h2>
             </div>
             <div class="space-y-4">
                 <div class="flex items-center justify-between">
