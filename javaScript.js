@@ -1485,13 +1485,13 @@ function populateCalendar2(dutiesPerDay) {
     for (let date = 1; date <= lastDate; date++) {
         const dayElement = document.createElement('div');
         dayElement.className = 'calendar-day';
-
+        
         const currentDate = new Date(currentYear, currentMonth, date);
         const duties = dutiesPerDay[currentDate.toDateString()] || 0;
-
+        
         dayElement.innerHTML = `
             <span>${date}</span>
-            ${duties > 0 ? `<span class="duty-count">${duties} תורנויות</span>` : ''}
+            <span class="duty-count">${duties}</span>
         `;
 
         dayElement.onclick = () => showDayDuties(currentDate);
