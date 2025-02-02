@@ -265,6 +265,7 @@ async function handleLogin(event) {
            // Hide login wrapper and show app wrapper
            document.getElementById('loginWrapper').style.display = 'none';
            document.getElementById('appWrapper').style.display = 'block';
+           document.getElementById('registerForm').classList.add('hidden');
 
            // Update displayed name
            const userGreeting = document.querySelector('#duties h2');
@@ -1104,10 +1105,9 @@ async function handleSwitchChoice(switchId, assignmentId) {
         // Show success message
         alert('ההחלפה בוצעה בהצלחה');
 
-        // Properly navigate to duties section
+        // Navigate to duties section and ensure app wrapper is visible
+        document.getElementById('appWrapper').style.display = 'block';
         showSection('duties');
-        
-        // Refresh the duties display
         loadUserDuties();
 
     } catch (error) {
@@ -1571,4 +1571,28 @@ async function showDayDuties(date) {
         document.body.appendChild(modal);
     } catch (error) {
         console.error('Error showing duties:', error);
-    }} 
+    }}
+
+async function handleLogout() {
+    try {
+        await auth.signOut();
+        localStorage.removeItem('userData');
+        
+        // Hide app wrapper and show login wrapper
+        document.getElementById('appWrapper').style.display = 'none';
+        document.getElementById('loginWrapper').style.display = 'block';
+        document.getElementById('loginForm').classList.remove('hidden');
+        document.getElementById('registerForm').classList.add('hidden');
+        
+        // Close settings modal
+        closeSettings();
+        
+        // Clear any form inputs
+        document.getElementById('loginPhone').value = '';
+        document.getElementById('loginPassword').value = '';
+        
+    } catch (error) {
+        console.error('Error logging out:', error);
+        alert('שגיאה בהתנתקות מהמערכת');
+    }
+} 
